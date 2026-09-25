@@ -1,143 +1,85 @@
-<h1>
-    <p align="center">
-        <img src="https://raw.githubusercontent.com/alumnium-hq/alumnium.github.io/efb2afaf0ced7ec07c241445e7b381914281edaf/src/assets/logo.svg" height="128" alt="Logo" />
-        <br />
-        Alumnium
-    </p>
-</h1>
-<p align="center">
-    End-to-end testing with AI
-    <br />
-    <a href="#installation">Installation</a>
-    ·
-    <a href="#quick-start">Quick Start</a>
-    ·
-    <a href="https://alumnium.ai/docs/">Documentation</a>
-</p>
+# ShinuAILabs-Alumnium
 
-Alumnium is an AI-native library and MCP for end-to-end testing. It builds upon the existing test automation ecosystem and simplifies interactions with applications, providing more robust mechanisms for verifying assertions. It works with Appium, Maestro, Playwright, or Selenium and gives you [state-of-the-art][7] capabilities.
+AI-native E2E testing **layered on top of the Playwright, Selenium, and Appium suites you already have** — describe steps in natural language, keep your framework.
 
-https://github.com/user-attachments/assets/461050ba-f219-4ae2-bf5c-65faeb12b77e
+<p align="center"><b>🚧 Shinu AI Labs Edition</b> — maintained study & enhancement fork of <a href="https://github.com/alumnium-hq/alumnium">alumnium-hq/alumnium</a> (MIT).</p>
 
-## Installation
+---
 
-### MCP
+## Why This Repo Exists
 
-```sh
-curl -LsSf https://alumnium.ai/install.sh | sh
-# then add to your agent
-claude mcp add alumnium --env OPENAI_API_KEY=... -- alumnium mcp
-```
+Most "AI testing" tools ask you to throw away your existing suite and start from agent-first chaos. **Alumnium takes the opposite path** — and we think that's the right one for enterprises:
 
-### Java
+1. **Keep** your existing Playwright / Selenium / Appium tests and CI
+2. **Layer** natural-language actions and checks (`al.do(...)`, `al.check(...)`) on top
+3. **Adopt AI incrementally** — one test step at a time, with framework-level control retained
 
-```groovy
-dependencies {
-  testImplementation 'ai.alumnium:alumnium:0.21.0'
-  testRuntimeOnly    'ai.alumnium:alumnium-cli-darwin-arm64:0.21.0'
-  // Add other platforms as needed
-}
-```
+This aligns with Shinu AI Labs' core philosophy:
 
-### Python
+> **The tools execute. Engineering judgment decides.**
 
-```bash
-pip install alumnium
-```
+Every AI-generated action/check remains reviewable, cacheable, and governed — AI proposes, engineers dispose.
 
-### TypeScript
+## What's Inside (from upstream Alumnium)
 
-```bash
-npm install alumnium
-```
+| Component | Description |
+|---|---|
+| **Client libraries** | Java, Python, TypeScript — wrap your existing driver |
+| **MCP Server** | Connect Claude Code, Codex, Cursor as agentic testing clients |
+| **Markdown Test Runner** | Write scenarios in Markdown, execute locally or in CI |
+| **Accessibility-tree engine** | Compact UI representation → LLM → deterministic browser actions |
+| **Element & response cache** | Warm-cache replays need zero new LLM requests |
+| **Vision support** | For checks that need "looking", not just accessibility trees |
 
-Refer to [documentation][8] for installation details on other MCP clients.
+## Quick Start (TypeScript + Playwright)
 
-## Quick Start
-
-### MCP
-
-1. Run your agent (Claude Code).
-2. Tell it to open the URL and test your application.
-
-### Java
-
-```java
-import ai.alumnium.Alumni;
-import org.openqa.selenium.chrome.ChromeDriver;
-
-class AlumniumTest {
-    public static void main(String...args) {
-        ChromeDriver driver = new ChromeDriver();
-        Alumni al = new Alumni(driver);
-        driver.get("https://search.brave.com");
-        al.act("type 'selenium' into the search field, then press 'Enter'");
-        al.check("page title contains selenium");
-        al.check("search results contain selenium.dev");
-        al.quit();
-    }
-}
-```
-
-### Python
-
-```python
-import os
-from alumnium import Alumni
-from selenium.webdriver import Chrome
-
-os.environ["OPENAI_API_KEY"] = "..."
-
-driver = Chrome()
-driver.get("https://search.brave.com")
-
-al = Alumni(driver)
-al.do("type 'selenium' into the search field, then press 'Enter'")
-al.check("page title contains selenium")
-al.check("search results contain selenium.dev")
-assert al.get("atomic number") == 34
-
-al.quit()
-```
-
-### TypeScript
-
-```ts
+```typescript
+import { test } from "@playwright/test";
 import { Alumni } from "alumnium";
-import { Builder } from "selenium-webdriver";
 
-process.env.OPENAI_API_KEY = "...";
+test.describe("YouTube Search", async () => {
+  let al: Alumni;
 
-const driver = await new Builder().forBrowser("chrome").build();
-const al = new Alumni(driver);
+  test.beforeEach(async ({ page }) => {
+    al = new Alumni(page);
+  });
 
-await driver.get("https://search.brave.com");
-await al.do("type 'selenium' into the search field, then press 'Enter'");
-await al.check("page title contains selenium");
-await al.check("search results contain selenium.dev");
-console.assert((await al.get("atomic number")) === 34);
+  test.afterEach(async () => {
+    await al.quit();
+  });
 
-await al.quit();
+  test("searches videos", async ({ page }) => {
+    await page.goto("https://youtube.com");
+    await al.do("search for 'lofi beats' and press Enter");
+    await al.check("page title contains 'lofi beats'");
+    await al.check("search results contain lofi videos");
+  });
+});
 ```
 
-Check out [documentation][1] and more [Java][9], [Python][2] and [TypeScript][6] examples.
+Works identically in **Python**, **Java** (JUnit 5), and via **MCP** for coding agents.
 
-## Contributing
+## Shinu AI Labs Track (Coming)
 
-See the [contributing guidelines][4] for information on how to get involved in the project and develop locally.
+This fork will progressively add:
 
-## Acknowledgments
+- **Governance patterns** — human-in-the-loop gates around AI test decisions
+- **Indian enterprise examples** — compliance-heavy test scenarios
+- **Cost analysis** — LLM token economics vs manual maintenance savings
+- **Hybrid locator strategy** — Gherkin-style intent meets stable selectors
+- **Case studies** — real runs documented in `docs/case-studies/`
 
-[<img alt="TestMu AI" src="https://assets.testmuai.com/resources/images/testmu-ai/footer/footerLogo.svg" width="150">][5]
+## Attribution
 
-Alumnium is a member of the [TestMu AI][5] Open Source Program, which supports the project community and development with the necessary tools. Thank you! 💚
+Based on the original **Alumnium** by [alumnium-hq](https://github.com/alumnium-hq/alumnium), MIT license.
+Shinu AI Labs edition — adaptations and additions follow the same MIT license.
 
-[1]: https://alumnium.ai/docs/
-[2]: packages/python/examples/
-[3]: https://alumnium.ai/docs/getting-started/configuration/
-[4]: ./CONTRIBUTING.md
-[5]: https://www.testmuai.com/
-[6]: packages/typescript/examples/
-[7]: https://alumnium.ai/blog/webvoyager-benchmark/
-[8]: https://alumnium.ai/docs/guides/mcp/
-[9]: packages/java/src/test/java/ai/alumnium/system
+## Connect
+
+- 📄 Portfolio: [shinuailabs.com](https://shinuailabs.com)
+- 💼 [LinkedIn — Shinoj K Narayan](https://linkedin.com/in/shinoj-narayan)
+- ✉️ shinulearning@gmail.com
+
+---
+
+*Part of the Shinu AI Labs open-source initiative: practical AI-native engineering, India-first, built in public.*
