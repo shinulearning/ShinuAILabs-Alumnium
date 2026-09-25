@@ -1,0 +1,126 @@
+
+[settings]
+python.uv_venv_auto = "source"
+
+[env]
+_.python.venv = { create = true, path = '.venv' }
+
+[tasks.install]
+run = "uv sync"
+depends = "//packages/typescript:build"
+
+[tasks."install/playwright"]
+run = "uv run playwright install chromium $PLAYWRIGHT_INSTALL_DEPS_ARG"
+# NOTE: On Debian-compatible Linux, it prompts for sudo to install OS dependencies.
+raw = true
+
+[tasks.clean]
+run = "rm -rf .alumnium dist log reports .pytest_cache __pycache__ .ruff_cache htmlcov .coverage coverage.xml"
+
+[tasks."clear/cache"]
+description = "Clears Python package Alumnium LLM cache."
+run = "rm -rf ./.alumnium/cache"
+
+[tasks.build]
+run = '''
+rm -rf dist
+mkdir -p dist
+uv build --out-dir dist
+'''
+description = "Build main pip package"
+
+[tasks.test]
+run = [{ task = "test/unit" }, { task = "test/system:all" }]
+
+[tasks."test/unit"]
+run = "pytest --cov=alumnium --cov-report=html --cov-report=xml tests/"
+
+[tasks."test/system"]
+usage = '''
+arg "<driver>" help="Driver to use for system tests" {
+  choices "selenium" "playwright" "appium-ios" "appium-android"
+  default "selenium"
+}
+arg "[test]" help="System test to run" default=""
+'''
+run = "ALUMNIUM_DRIVER={{usage.driver}} ALUMNIUM_TEST_ARG={{usage.test}} ./scripts/test-system.sh"
+
+[tasks."test/system:all"]
+usage = '''
+arg "[test]" help="System test to run" default=""
+'''
+run = [
+  { task = "test/system:selenium", args = ["{{usage.test}}"] },
+  { task = "test/system:playwright", args = ["{{usage.test}}"] },
+  { task = "test/system:appium-ios", args = ["{{usage.test}}"] },
+  { task = "test/system:appium-android", args = ["{{usage.test}}"] },
+]
+
+[tasks."test/system:selenium"]
+usage = '''
+arg "[test]" help="System test to run" default=""
+'''
+run = [{ task = "test/system", args = ["selenium", "{{usage.test}}"] }]
+
+[tasks."test/system:playwright"]
+usage = '''
+arg "[test]" help="System test to run" default=""
+'''
+run = [{ task = "test/system", args = ["playwright", "{{usage.test}}"] }]
+
+[tasks."test/system:appium-ios"]
+usage = '''
+arg "[test]" help="System test to run" default=""
+'''
+run = [{ task = "test/system", args = ["appium-ios", "{{usage.test}}"] }]
+
+[tasks."test/system:appium-android"]
+usage = '''
+arg "[test]" help="System test to run" default=""
+'''
+run = [{ task = "test/system", args = ["appium-android", "{{usage.test}}"] }]
+
+[tasks."test/package"]
+run = "./scripts/test-package.sh"
+depends = "build"
+
+[tasks."test/system/upload:android-app"]
+run = "fnox exec -- curl -u $LT_USERNAME:$LT_ACCESS_KEY -X POST https://manual-api.lambdatest.com/app/upload/realDevice -F appFile=@examples/behave/features/support/TodoList.apk -F name=AndroidToDoApp"
+
+[tasks."test/system/upload:ios-app"]
+run = "fnox exec -- curl -u $LT_USERNAME:$LT_ACCESS_KEY -X POST https://manual-api.lambdatest.com/app/upload/realDevice -F appFile=@examples/behave/features/support/TodoList.ipa -F name=TodoList"
+
+[tasks.lint]
+run = "ruff check ."
+
+[tasks."lint:fix"]
+run = "ruff check --fix ."
+
+[tasks.format]
+run = [{ task = "format/pyproject" }, { task = "format/code" }]
+
+[tasks."format/check"]
+run = [{ task = "format/pyproject:check" }, { task = "format/code:check" }]
+
+[tasks."format/pyproject"]
+run = "pyprojectsort"
+
+[tasks."format/pyproject:check"]
+run = "pyprojectsort --diff"
+
+[tasks."format/code"]
+run = "ruff format ."
+
+[tasks."format/code:check"]
+run = "ruff format . --check"
+
+[tasks.types]
+run = "uv run ty check"
+
+[tasks."types:watch"]
+run = "uv run ty check --watch"
+
+[tasks.demo]
+run = "fnox exec -- uv run python -i demo.py"
+raw = true
+quiet = true

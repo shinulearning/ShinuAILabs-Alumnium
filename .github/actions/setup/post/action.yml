@@ -1,0 +1,44 @@
+name: Dev Env Post-Setup
+description: Saves caches for the dev environment.
+
+inputs:
+  python-cache:
+    required: false
+    default: false
+    description: "If to cache Python-specific artifacts, i.e., venv."
+
+runs:
+  using: "composite"
+  steps:
+    - name: Save mise State
+      uses: actions/cache/save@v5
+      with:
+        path: ~/.local/state/mise
+        key: mise-state-${{ runner.os }}-${{ github.sha }}
+
+    - name: Save Bun Cache
+      uses: actions/cache/save@v5
+      with:
+        path: ~/.bun/install/cache
+        key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+
+    - name: Save uv Cache
+      uses: actions/cache/save@v5
+      with:
+        path: ~/.cache/uv
+        key: uv-${{ runner.os }}-${{ hashFiles('packages/python/uv.lock') }}
+
+    - name: Save Python venv
+      if: ${{ inputs.python-cache == 'true' }}
+      uses: actions/cache/save@v5
+      with:
+        path: packages/python/.venv
+        key: venv-${{ runner.os }}-${{ hashFiles('packages/python/uv.lock') }}
+
+    - name: Save Gradle Cache
+      uses: actions/cache/save@v5
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle', '**/*.gradle.kts', '**/gradle-wrapper.properties', '**/gradle.properties') }}

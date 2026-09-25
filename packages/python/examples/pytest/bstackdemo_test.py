@@ -1,0 +1,55 @@
+from os import getenv
+
+import pytest
+from pytest import fixture, mark
+
+from alumnium import Provider
+
+driver_type = getenv("ALUMNIUM_DRIVER", "selenium")
+
+
+@fixture(autouse=True)
+def learn(al, execute_script, navigate):
+    al.learn("add 'Laptop' to cart", ["click button 'Add to cart' next to 'Laptop' product"])
+    navigate("https://bstackdemo.com")
+    yield
+    execute_script("window.sessionStorage.clear()")
+    al.clear_learn_examples()
+
+
+@mark.xfail(driver_type == "appium-ios", reason="https://github.com/alumnium-hq/alumnium/issues/132")
+def test_checkout(al):
+    if al.model.provider in (Provider.AWS_META, Provider.MISTRALAI):
+        pytest.xfail("Needs more tuning.")
+
+    # Add products to the cart
+    al.do("add 'iPhone 12 Pro Max' to cart")
+    al.do("add 'iPhone 12 Mini' to cart")
+    # https://github.com/alumnium-hq/alumnium/issues/110
+    cart = al.area("shopping cart including added products")
+    assert cart.get("titles of products") == ["iPhone 12 Pro Max", "iPhone 12 Mini"]
+    assert cart.get("quantity of iPhone 12 Pro Max") == 1
+    assert cart.get("quantity of iPhone 12 Mini") == 1
+
+    # Start checkout and login
+    al.do("go to checkout")
+    al.do("type 'demouser' into username field")
+    al.do("click 'demouser' in username field suggestions")
+    al.do("type 'testingisfun99' into password field")
+    al.do("click 'testingisfun99' in password field suggestions")
+    al.do("click login button")
+
+    # Proceed through checkout
+    assert al.get("iPhone 12 Pro Max price (without money sign)") == 1099
+    assert al.get("iPhone 12 Mini price (without money sign)") == 699
+    assert al.get("total amount (without money sign)") == 1798
+
+    fields = {
+        "first name": "Al",
+        "last name": "Um",
+        "address": "1st Market Street",
+        "state": "CA",
+        "postal code": 95122,
+    }
+    al.do(f"submit with {fields}")
+    al.check("order is placed message is shown")

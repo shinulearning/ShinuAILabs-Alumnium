@@ -1,0 +1,45 @@
+from os import getenv
+
+from pytest import fixture
+
+alumnium_driver = getenv("ALUMNIUM_DRIVER", "selenium")
+
+
+@fixture(autouse=True)
+def learn(al):
+    # Mistral skips '+' button.
+    al.learn(
+        goal="4 / 2 =",
+        actions=[
+            "click button '4'",
+            "click button '÷'",
+            "click button '2'",
+            "click button '='",
+        ],
+    )
+    yield
+    al.clear_learn_examples()
+
+
+def test_addition(al, navigate):
+    navigate("https://seleniumbase.io/apps/calculator")
+    al.do("2 + 2 =")
+    assert al.get("calculator result from textfield") == 4
+
+
+def test_subtraction(al, navigate):
+    navigate("https://seleniumbase.io/apps/calculator")
+    al.do("5 - 3 =")
+    assert al.get("calculator result from textfield") == 2
+
+
+def test_multiplication(al, navigate):
+    navigate("https://seleniumbase.io/apps/calculator")
+    al.do("3 * 4 =")
+    assert al.get("calculator result from textfield") == 12
+
+
+def test_division(al, navigate):
+    navigate("https://seleniumbase.io/apps/calculator")
+    al.do("8 / 2 =")
+    assert al.get("calculator result from textfield") == 4

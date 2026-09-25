@@ -1,0 +1,30 @@
+---
+interface Props {
+  prefix: string;
+  author: {
+    name: string;
+    image: string;
+  };
+  size?: "md" | "sm";
+}
+
+const { prefix, author, size } = Astro.props;
+---
+
+<div
+  class="flex flex-row gap-2 items-center text-accent-200/80 leading-none capsize"
+>
+  <span>{prefix}</span>
+
+  <img
+    src={`/authors/${author.image}`}
+    alt={`${author.name}'s avatar`}
+    class:list={[
+      "rounded-full",
+      (!size || size === "md") && "size-7",
+      size === "sm" && "size-4",
+    ]}
+  />
+
+  <span class="font-medium">{author.name}</span>
+</div>

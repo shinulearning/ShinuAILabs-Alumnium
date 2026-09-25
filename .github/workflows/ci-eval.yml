@@ -1,0 +1,70 @@
+name: Eval
+on:
+  workflow_call:
+    inputs:
+      sha:
+        required: true
+        type: string
+      models:
+        description: JSON array of model providers to test with.
+        required: false
+        type: string
+        default: '["azure_openai"]'
+
+env:
+  ALUMNIUM_LOG_LEVEL: debug
+  ALUMNIUM_LOG_DEBUG_EXTRA: all
+  LT_USERNAME: ${{ secrets.LT_USERNAME }}
+  LT_ACCESS_KEY: ${{ secrets.LT_ACCESS_KEY }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+  AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
+  AZURE_FOUNDRY_API_KEY: ${{ secrets.AZURE_FOUNDRY_API_KEY }}
+  AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+  AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+  CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+  DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+  GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+  MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+  XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+
+jobs:
+  eval:
+    name: Eval
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      ALUMNIUM_MODEL: ${{ matrix.model }}
+      ALUMNIUM_EVAL_RUN_TIMEOUT_MIN: 5
+      ALUMNIUM_EVAL_TRIAL_COUNT: 15
+      ALUMNIUM_EVAL_MAX_CONCURRENCY: 5
+      ALUMNIUM_EVAL_THRESHOLD_PCT: 70
+
+    strategy:
+      fail-fast: false
+      matrix:
+        model: ${{ fromJSON(inputs.models) }}
+
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.sha || github.sha }}
+
+      - name: Set Up Dev Env
+        uses: ./.github/actions/setup
+
+      - name: Eval
+        run: mise //packages/typescript:eval
+
+      - name: Upload Alumnium Artifacts
+        if: always()
+        uses: ./.github/actions/alumnium-artifacts
+        with:
+          name: ci-eval-${{ matrix.model }}
+          package: typescript
+
+      - name: Debug Session
+        if: failure() && runner.debug == '1'
+        uses: mxschmitt/action-tmate@v3

@@ -1,0 +1,263 @@
+---
+title: Reference
+description: Alumnium reference and notes
+---
+
+## Browser Support
+
+Alumnium works by building an accessibility tree of the webpage. Unfortunately, there is no standard API in browsers to provide this tree. Due to this limitation, the current version of Alumnium only works in Chromium-based browsers such as Google Chrome, Microsoft Edge, Opera, and others.
+
+Playwright driver supports both _headful_ and _headless_ modes, while Selenium driver only supports the _headful_ mode.
+
+## Mobile Support
+
+Alumnium supports [Appium](https://appium.io) with XCUITest driver for iOS automation and UiAutomator2 driver for Android automation across all client libraries. The MCP server can also drive iOS and Android through [Maestro](https://maestro.dev).
+
+## Environment Variables
+
+The following environment variables can be used to control the behavior of Alumnium.
+
+Any environment variable listed below may be set to a command substitution of the form `$(command)`. On startup Alumnium runs `command`, trims trailing newlines from its output, and uses the result as the variable's value.
+
+### `ALUMNIUM_CACHE`
+
+Sets the cache provider used by Alumnium. Supported values are:
+
+- `filesystem` (default)
+- `none` or `false`
+
+### `ALUMNIUM_CACHE_PATH`
+
+Sets the directory where the filesystem cache is stored. Default is `.alumnium/cache`.
+
+### `ALUMNIUM_CHANGE_ANALYSIS`
+
+Set to `true` to enable analysis of UI changes made by `do()`. When enabled, Alumnium captures the accessibility tree before and after each action and returns a description of what changed. Default is `false` when using Alumnium as a library and `true` when running Alumnium MCP server.
+
+### `ALUMNIUM_DELAY`
+
+Delay in seconds between retries when an action fails. Default is `0.5`.
+
+### `ALUMNIUM_EXCLUDE_ATTRIBUTES`
+
+Comma-separated list of accessibility tree attributes to exclude (e.g. `focusable,url`). Useful for reducing accessibility tree size on large pages.
+
+### `ALUMNIUM_FULL_PAGE_SCREENSHOT`
+
+Set to `true` to capture full-page screenshots instead of viewport-only screenshots. Default is `false`.
+
+### `ALUMNIUM_LOG_LEVEL`
+
+Sets the level used by Alumnium logger. Supported values are:
+
+- `debug`
+- `info` (default)
+- `warning`
+- `error`
+- `critical`
+
+### `ALUMNIUM_LOG_PATH`
+
+Sets the output location used by Alumnium logger. Supported values are:
+
+- a path to a file (e.g. `alumnium.log`);
+- `stdout` to print logs to the standard output.
+
+:::tip[Debug logs on GitHub Actions]
+The following workflow step enables debug logging in Alumnium when they are enabled in [GitHub Actions][1].
+
+```yaml title=".github/workflows/ci.yml"
+- name: Enable debug logging in Alumnium
+  if: runner.debug == '1'
+  run: |
+    echo ALUMNIUM_LOG_LEVEL=debug >> "$GITHUB_ENV"
+    echo ALUMNIUM_LOG_PATH=alumnium.log >> "$GITHUB_ENV"
+```
+
+:::
+
+### `ALUMNIUM_LOG_DEBUG_EXTRA`
+
+Comma-separated list of extra debug payloads to include in logs. Use `all` to enable everything. Supported values include `env` (environment variables) and others. Default is empty.
+
+### `ALUMNIUM_PRUNE_LOGS`
+
+Set to `false` to keep existing log files instead of truncating them on startup. Default is `true`.
+
+### `ALUMNIUM_LOG_BUFFER_SIZE`
+
+Buffer size, in bytes, used when writing logs to a file. Default is `4096`.
+
+### `ALUMNIUM_LOG_FLUSH_INTERVAL`
+
+Interval in milliseconds between flushes when writing logs to a file. Default is `500`.
+
+### `ALUMNIUM_TRACE`
+
+Set to `true` to enable local OpenTelemetry tracing and logs. When enabled, configure the OTLP endpoint with standard OpenTelemetry environment variables, for example:
+
+```sh
+export ALUMNIUM_TRACE="true"
+export OTEL_SERVICE_NAME="alumnium"
+export OTEL_EXPORTER_OTLP_ENDPOINT="http://127.0.0.1:4318"
+export OTEL_EXPORTER_OTLP_PROTOCOL="http/protobuf"
+```
+
+### `ALUMNIUM_MODEL`
+
+Select AI provider and model to use.
+
+| Value         | LLM                                         | Notes                                                                    |
+| ------------- | ------------------------------------------- | ------------------------------------------------------------------------ |
+| anthropic     | claude-haiku-4-5-20251001                   | Anthropic API.                                                           |
+| azure_foundry | gpt-5.6-luna                                | Azure AI Foundry API.                                                    |
+| azure_openai  | gpt-5.6-luna                                | Self-hosted Azure OpenAI API.                                            |
+| aws_anthropic | us.anthropic.claude-haiku-4-5-20251001-v1:0 | Serverless Amazon Bedrock API.                                           |
+| aws_meta      | us.meta.llama4-maverick-17b-instruct-v1:0   | Serverless Amazon Bedrock API.                                           |
+| codex         | gpt-5.6-luna                                | OpenAI models via ChatGPT Plus/Pro OAuth.                                |
+| cursor        | composer-2.5                                | Cursor models via Cursor Agents SDK (local runtime).                     |
+| deepseek      | deepseek-flash                              | DeepSeek Platform.                                                       |
+| google        | gemini-3.5-flash-lite                       | Google AI Studio API.                                                    |
+| mistralai     | mistral-medium-3-5                          | Mistral AI Studio API.                                                   |
+| ollama        | qwen3.6:35b                                 | Local model inference with Ollama.                                       |
+| openai        | gpt-5.6-luna                                | OpenAI API.                                                              |
+| openrouter    | openai/gpt-5.6-luna                         | Models routed through OpenRouter.                                        |
+| xai           | grok-4.3                                    | xAI API.                                                                 |
+
+You can also override the LLM for each provider by passing it after `/`.
+
+```sh title="Custom OpenAI model"
+export ALUMNIUM_MODEL="openai/gpt-5"
+```
+
+### `ALUMNIUM_MCP_MODE`
+
+MCP execution mode:
+
+- `agentic` (default) uses an LLM to interpret instructions, providing high-level tools (do/get/check)
+- `direct` skips LLM, instead providing low-level interaction tools (click/type/upload/etc.)
+
+### `ALUMNIUM_MCP_ARTIFACTS_DIR`
+
+Sets the directory where the MCP server stores artifacts such as screenshots. Default is `.alumnium/artifacts`.
+
+### `ALUMNIUM_MCP_PROFILES_DIR`
+
+Sets the directory where the MCP server stores persistent browser profiles. Default is `~/.alumnium/profiles`. See the [`profile` option](/docs/guides/mcp#alumniumoptions) for details.
+
+### `ALUMNIUM_MODEL_RETRIES`
+
+Number of retries for failed AI model requests (e.g., rate limiting). Default is `8`.
+
+### `ALUMNIUM_MODEL_TIMEOUT`
+
+Timeout in seconds for AI model requests. Default is `90`.
+
+### `ALUMNIUM_OLLAMA_URL`
+
+Sets the URL for Ollama models if you host them externally on a server.
+
+### `ALUMNIUM_PLANNER`
+
+Set to `false` to disable the planning step. When disabled, the actor's own reasoning is used as the explanation. Default is `true`.
+
+### `ALUMNIUM_RETRIES`
+
+Number of retries when an action/verification/retrieval fails. Default is `2`.
+
+### `ALUMNIUM_STORE_DIR`
+
+Sets the root directory for Alumnium's persistent file store (cache, artifacts, etc.). Default is `.alumnium`.
+
+### `ALUMNIUM_PLAYWRIGHT_HEADLESS`
+
+Set to `false` to start Playwright in headed mode. Only used in the [MCP server][3]. Default is `true`.
+
+### `ALUMNIUM_SELENIUM_BROWSER_VERSION`
+
+Sets the `browserVersion` capability for Selenium, e.g. `stable`. Selenium Manager then downloads a matching Chrome for Testing build instead of using the locally installed Chrome. Only used in the [MCP server][3].
+
+### `ANTHROPIC_API_KEY`
+
+API key used when `ALUMNIUM_MODEL` is set to `anthropic`.
+
+### `AWS_ACCESS_KEY`
+
+AWS access key used when `ALUMNIUM_MODEL` is set to `aws_anthropic` or `aws_meta`.
+
+### `AWS_REGION_NAME`
+
+AWS region used when `ALUMNIUM_MODEL` is set to `aws_anthropic` or `aws_meta`. Default is `us-east-1`.
+
+### `AWS_SECRET_KEY`
+
+AWS secret key used when `ALUMNIUM_MODEL` is set to `aws_anthropic` or `aws_meta`.
+
+### `AZURE_FOUNDRY_API_KEY`
+
+API key used when `ALUMNIUM_MODEL` is set to `azure_foundry`.
+
+### `AZURE_FOUNDRY_TARGET_URI`
+
+Endpoint URL used when `ALUMNIUM_MODEL` is set to `azure_foundry`.
+
+### `AZURE_OPENAI_API_KEY`
+
+API key used when `ALUMNIUM_MODEL` is set to `azure_openai`.
+
+### `AZURE_OPENAI_DEFAULT_HEADERS`
+
+JSON string of additional headers to send with Azure OpenAI requests (e.g. `{"x-custom-header": "value"}`).
+
+### `AZURE_OPENAI_ENDPOINT`
+
+Endpoint URL used when `ALUMNIUM_MODEL` is set to `azure_openai`.
+
+### `CURSOR_API_KEY`
+
+API key used when `ALUMNIUM_MODEL` is set to `cursor`. Generate one in the Cursor Dashboard.
+
+### `DEEPSEEK_API_KEY`
+
+API key used when `ALUMNIUM_MODEL` is set to `deepseek`.
+
+### `GOOGLE_API_KEY`
+
+API key used when `ALUMNIUM_MODEL` is set to `google`.
+
+### `LANGCHAIN_CODEX_LITTERBOX_UPLOAD`
+
+Set to `true` to enable vision support for the `codex` provider by temporarily uploading screenshots to a third-party image host ([litterbox.catbox.moe][4]) before sending them to the model. Codex models only accept image URLs, so this is required for vision checks. Default is `false`.
+
+### `MISTRAL_API_KEY`
+
+API key used when `ALUMNIUM_MODEL` is set to `mistralai`.
+
+### `OLLAMA_HOST`
+
+Sets the URL for Ollama models if you host them externally on a server.
+
+### `OPENAI_API_KEY`
+
+API key used when `ALUMNIUM_MODEL` is set to `openai`.
+
+### `OPENAI_CUSTOM_URL`
+
+Sets the URL for OpenAI models if you access them via custom endpoint.
+
+### `OPENAI_DEFAULT_HEADERS`
+
+JSON string of additional headers to send with OpenAI requests (e.g. `{"x-custom-header": "value"}`).
+
+### `XAI_API_KEY`
+
+API key used when `ALUMNIUM_MODEL` is set to `xai`.
+
+### `OPENROUTER_API_KEY`
+
+API key used when `ALUMNIUM_MODEL` is set to `openrouter`.
+
+[1]: https://docs.github.com/en/actions/monitoring-and-troubleshooting-workflows/troubleshooting-workflows/enabling-debug-logging
+[2]: https://github.com/alumnium-hq/alumnium/issues/112
+[3]: /docs/guides/mcp
+[4]: https://litterbox.catbox.moe

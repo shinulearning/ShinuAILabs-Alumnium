@@ -1,0 +1,197 @@
+import cloudflare from "@astrojs/cloudflare";
+import sitemap from "@astrojs/sitemap";
+import starlight from "@astrojs/starlight";
+import tailwindcss from "@tailwindcss/vite";
+import { defineConfig, sharpImageService } from "astro/config";
+
+// https://astro.build/config
+export default defineConfig({
+  adapter: cloudflare({ imageService: "compile" }),
+  site: "https://alumnium.ai",
+  image: {
+    service: sharpImageService({ limitInputPixels: false }),
+  },
+  build: {
+    format: "directory",
+  },
+  trailingSlash: "ignore",
+  markdown: {
+    gfm: true,
+  },
+  integrations: [
+    starlight({
+      logo: {
+        src: "./src/assets/icon.svg",
+        alt: "Alumnium",
+        replacesTitle: true,
+      },
+      title: "Alumnium",
+      social: [
+        {
+          icon: "github",
+          label: "GitHub",
+          href: "https://github.com/alumnium-hq/alumnium",
+        },
+        {
+          icon: "discord",
+          label: "Discord",
+          href: "https://discord.gg/mP29tTtKHg",
+        },
+        {
+          icon: "slack",
+          label: "Slack",
+          href: "https://seleniumhq.slack.com/channels/alumnium",
+        },
+      ],
+      head: [
+        {
+          tag: "link",
+          attrs: {
+            rel: "icon",
+            href: "/favicon.ico",
+            sizes: "32x32",
+          },
+        },
+        {
+          tag: "link",
+          attrs: {
+            rel: "icon",
+            href: "/favicon.svg",
+            type: "image/svg+xml",
+          },
+        },
+        {
+          tag: "link",
+          attrs: {
+            rel: "apple-touch-icon",
+            href: "/apple-touch-icon.png",
+          },
+        },
+        {
+          tag: "link",
+          attrs: {
+            rel: "manifest",
+            href: "/manifest.webmanifest",
+          },
+        },
+        {
+          tag: "script",
+          attrs: {
+            src: "https://scripts.simpleanalyticscdn.com/latest.js",
+            async: true,
+          },
+        },
+      ],
+      sidebar: [
+        {
+          label: "Getting Started",
+          items: [
+            {
+              label: "Overview",
+              slug: "docs",
+            },
+            {
+              label: "Installation",
+              slug: "docs/getting-started/installation",
+            },
+            {
+              label: "Configuration",
+              slug: "docs/getting-started/configuration",
+            },
+          ],
+        },
+        {
+          label: "Writing First Test",
+          items: [
+            {
+              label: "Appium",
+              slug: "docs/writing-first-test/appium",
+            },
+            {
+              label: "Playwright",
+              slug: "docs/writing-first-test/playwright",
+            },
+            {
+              label: "Selenium",
+              slug: "docs/writing-first-test/selenium",
+            },
+          ],
+        },
+        {
+          label: "Guides",
+          items: [
+            {
+              label: "Doing Actions",
+              slug: "docs/guides/actions",
+            },
+            {
+              label: "Checking Verifications",
+              slug: "docs/guides/verifications",
+            },
+            {
+              label: "Getting Data",
+              slug: "docs/guides/retrievals",
+            },
+            {
+              label: "Finding Elements",
+              slug: "docs/guides/elements",
+            },
+            {
+              label: "Focusing Areas",
+              slug: "docs/guides/areas",
+            },
+            {
+              label: "Caching",
+              slug: "docs/guides/caching",
+            },
+            {
+              label: "Self-hosting LLMs",
+              slug: "docs/guides/self-hosting",
+            },
+          ],
+        },
+        {
+          label: "MCP",
+          items: [
+            { label: "Overview", slug: "docs/mcp/overview" },
+            { label: "Agentic Mode", slug: "docs/mcp/agentic-mode" },
+            { label: "Direct Mode", slug: "docs/mcp/direct-mode" },
+          ],
+        },
+        {
+          label: "Reference",
+          slug: "docs/reference",
+        },
+      ],
+      customCss: [
+        "./src/styles/global.css",
+        "@fontsource-variable/mona-sans",
+        "@fontsource-variable/jetbrains-mono",
+        "@fontsource-variable/hubot-sans",
+      ],
+      components: {
+        Header: "./src/components/overrides/Header.astro",
+        MobileMenuFooter: "./src/components/overrides/MobileMenuFooter.astro",
+        ContentPanel: "./src/components/overrides/ContentPanel.astro",
+        PageTitle: "./src/components/overrides/PageTitle.astro",
+        SiteTitle: "./src/components/overrides/SiteTitle.astro",
+        Footer: "./src/components/overrides/Footer.astro",
+      },
+    }),
+    sitemap({}),
+  ],
+
+  vite: {
+    plugins: [...tailwindcss()],
+    build: {
+      // Prevent Vite from inlining assets, i.e. giving data URLs for small SVGs.
+      assetsInlineLimit: 0,
+    },
+  },
+
+  redirects: {
+    "/docs/getting-started/writing-first-test":
+      "/docs/writing-first-test/selenium",
+    "/docs/guides/mcp": "/docs/mcp/overview",
+  },
+});

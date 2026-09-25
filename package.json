@@ -1,0 +1,31 @@
+{
+  "name": "@alumnium/repo",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "websites/docs"
+  ],
+  "scripts": {
+    "types": "tsc --build",
+    "types:watch": "tsc --build --watch"
+  },
+  "dependencies": {
+    "smolxxh": "^1.1.0"
+  },
+  "devDependencies": {
+    "@typescript/native-preview": "7.0.0-dev.20260327.2",
+    "oxfmt": "^0.65.0",
+    "oxlint": "^1.62.0",
+    "oxlint-tsgolint": "^0.21.0",
+    "typescript": "^7.0.2"
+  },
+  "overrides": {
+    "ajv": ">=8.18.0",
+    "lodash": ">=4.18.1",
+    "picomatch": ">=2.3.2",
+    "yaml": ">=2.8.3"
+  },
+  "patchedDependencies": {
+    "@ai-sdk/amazon-bedrock@5.0.61": "patches/@ai-sdk%2Famazon-bedrock@5.0.61.patch"
+  }
+}

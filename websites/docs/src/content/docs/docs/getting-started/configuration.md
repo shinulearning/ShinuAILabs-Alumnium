@@ -1,0 +1,220 @@
+---
+title: Configuration
+description: Configure Alumnium with AI providers like OpenAI, Anthropic, Google, Meta, DeepSeek and Ollama. Learn how to set up API keys and environment variables for test automation.
+---
+
+Alumnium needs access to an AI model to work. The following models are supported:
+
+| Provider                | Model                   |
+| ----------------------- | ----------------------- |
+| [Anthropic][1]          | Claude 4.5 Haiku        |
+| [Google][2]             | Gemini 3.5 Flash Lite   |
+| [OpenAI][3] _(default)_ | GPT-5.6 Luna            |
+| [OpenRouter][27]        | GPT-5.6 Luna            |
+| [Codex][22]             | GPT-5.6 Luna            |
+| [DeepSeek][12]          | DeepSeek Flash          |
+| [Meta][8]               | Llama 4 Maverick 17B    |
+| [MistralAI][16]         | Mistral Medium 3.5      |
+| [Ollama][15]            | Qwen 3.6                |
+| [xAI][18]               | Grok 4.3                |
+
+These models were chosen because they provide the best balance between intelligence, performance, and cost. Most models now support reasoning capabilities for improved accuracy and decision-making in test automation.
+
+:::tip[Trying out?]
+[Google][7] provides a free-of-charge plan in many regions, which is convenient for experimenting. Alumnium automatically retries requests when hitting rate limits on the free plan.
+:::
+
+## Anthropic
+
+To use Anthropic as an AI provider in Alumnium:
+
+1. Get the [API key][4].
+2. Export the following environment variables before running tests:
+
+```bash
+export ALUMNIUM_MODEL="anthropic"
+export ANTHROPIC_API_KEY="sk-ant-..."
+```
+
+## Google
+
+To use Google AI Studio as an AI provider in Alumnium:
+
+1. Get the [API key][5].
+2. Export the following environment variables before running tests:
+
+```bash
+export ALUMNIUM_MODEL="google"
+export GOOGLE_API_KEY="..."
+```
+
+## OpenAI
+
+To use OpenAI as an AI provider in Alumnium:
+
+1. Get the [API key][6].
+2. Export the following environment variables before running tests:
+
+```bash
+export ALUMNIUM_MODEL="openai"
+export OPENAI_API_KEY="sk-proj-..."
+```
+
+## Codex
+
+:::caution
+Codex support is experimental and can stop working at any time. Instead of an API key, it authenticates via your ChatGPT Plus/Pro subscription using OAuth tokens managed by the [Codex CLI][22].
+
+Vision is not supported out-of-the-box because Codex models only accept pre-uploaded images. You can enable it by setting `LANGCHAIN_CODEX_LITTERBOX_UPLOAD=true`, which will temporarily upload screenshots to a third-party image host ([litterbox.catbox.moe][23]) before sending them to the model.
+:::
+
+To use Codex as an AI provider in Alumnium:
+
+1. Install the [Codex CLI][22] and sign in with your ChatGPT account (the OAuth tokens are stored in `~/.codex/auth.json`).
+2. Export the following environment variables before running tests:
+
+```bash
+export ALUMNIUM_MODEL="codex"
+export LANGCHAIN_CODEX_LITTERBOX_UPLOAD="true"  # optionally enable vision support
+```
+
+## Cursor
+
+:::caution
+Cursor support is experimental and can stop working at any time. It runs prompts through [Cursor Agents][24] (local runtime) via the official [`@cursor/sdk`][26] package and Alumnium's AI SDK adapter, so it consumes your Cursor subscription's usage. Each Alumnium action spins up a short-lived local agent, which adds latency compared to direct API providers — consider raising `ALUMNIUM_MODEL_TIMEOUT` if you hit timeouts.
+
+When used from the compiled Alumnium binary (the Python and Java clients, or the standalone CLI), the first cursor-provider call downloads the Cursor SDK (~24 MB) from the npm registry into `~/.alumnium/vendor/cursor-sdk/<version>`, so it needs network access once. In air-gapped environments, point `ALUMNIUM_CURSOR_SDK_DIR` at a directory containing a pre-installed `node_modules` tree with `@cursor/sdk`.
+:::
+
+To use Cursor as an AI provider in Alumnium:
+
+1. Generate an API key in the [Cursor Dashboard][25].
+2. Export the following environment variables before running tests:
+
+```bash
+export ALUMNIUM_MODEL="cursor"
+export CURSOR_API_KEY="..."
+```
+
+## DeepSeek
+
+:::caution
+DeepSeek support is experimental and doesn't work with vision checks. The current implementation works via the DeepSeek Platform, but we're looking forward to extending it with Ollama, llama.cpp, etc.
+:::
+
+To use DeepSeek as an AI provider in Alumnium:
+
+1. Set up a [DeepSeek Platform][13] account.
+2. Get the [API key][14].
+3. Export the following environment variable before running tests:
+
+```bash
+export ALUMNIUM_MODEL="deepseek"
+export DEEPSEEK_API_KEY="sk-..."
+```
+
+## Meta
+
+:::caution
+Llama support is experimental. Its performance also highly depends on how you run it. The current implementation works via Amazon Bedrock, but we're looking forward to extending it with Ollama, llama.cpp, etc.
+:::
+
+To use Meta Llama as an AI provider in Alumnium:
+
+1. Set up an [Amazon Bedrock][9] account.
+2. Enable access to [Llama 4 Maverick][10] models.
+3. Get the [access key and secret][11].
+4. Export the following environment variables before running tests:
+
+```bash
+export ALUMNIUM_MODEL="aws_meta"
+export AWS_ACCESS_KEY="..."
+export AWS_SECRET_KEY="..."
+```
+
+## MistralAI
+
+To use MistralAI as an AI provider in Alumnium:
+
+1. Get the [API key][17].
+2. Export the following environemnt variables before running testes:
+
+```bash
+export ALUMNIUM_MODEL="mistralai"
+export MISTRAL_API_KEY="..."
+```
+
+## Ollama
+
+:::caution
+Ollama support is experimental and performance depends on your hardware.
+:::
+
+To use Ollama for a fully local model inference:
+
+1. Download and install [Ollama][15].
+2. Download Qwen 3.6 model:
+
+```bash
+ollama pull qwen3.6
+```
+
+3. Export the following environment variable before running tests:
+
+```bash
+export ALUMNIUM_MODEL="ollama"
+export ALUMNIUM_OLLAMA_URL="..."  # if you host Ollama on a server
+```
+
+## xAI
+
+To use xAI as an AI provider in Alumnium:
+
+1. Get the [API key][19].
+2. Export the following environemnt variables before running testes:
+
+```bash
+export ALUMNIUM_MODEL="xai"
+export XAI_API_KEY="xai-..."
+```
+
+## OpenRouter
+
+To access models through OpenRouter:
+
+1. Get an [OpenRouter API key][28].
+2. Export the provider and API key. Include the model author in custom model IDs:
+
+```bash
+export ALUMNIUM_MODEL="openrouter/z-ai/glm-5.3-flash"
+export OPENROUTER_API_KEY="sk-or-v1-..."
+```
+
+Read next to learn how to write tests!
+
+[1]: https://www.anthropic.com
+[2]: https://aistudio.google.com
+[3]: https://openai.com
+[4]: https://docs.anthropic.com/en/api/getting-started
+[5]: https://aistudio.google.com/app/apikey
+[6]: https://help.openai.com/en/articles/4936850-where-do-i-find-my-openai-api-key
+[7]: https://ai.google.dev/gemini-api/docs/billing
+[8]: https://www.llama.com
+[9]: https://aws.amazon.com/bedrock/
+[10]: https://aws.amazon.com/bedrock/llama/
+[11]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html
+[12]: https://www.deepseek.com
+[13]: https://platform.deepseek.com
+[14]: https://platform.deepseek.com/api_keys
+[15]: https://ollama.com
+[16]: https://mistral.ai/products/ai-studio
+[17]: https://docs.mistral.ai/getting-started/quickstart#account-setup
+[18]: https://x.ai
+[19]: https://x.ai/api
+[22]: https://github.com/openai/codex
+[23]: https://litterbox.catbox.moe
+[24]: https://cursor.com/docs/cloud-agent
+[25]: https://cursor.com/dashboard
+[26]: https://www.npmjs.com/package/@cursor/sdk
+[27]: https://openrouter.ai
+[28]: https://openrouter.ai/settings/keys

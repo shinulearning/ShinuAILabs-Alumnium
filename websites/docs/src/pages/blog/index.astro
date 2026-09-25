@@ -1,0 +1,70 @@
+---
+// NOTE: StarlightPage must always be the first import in the file!
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+
+import { getCollection } from "astro:content";
+import FormattedDate from "../../components/FormattedDate.astro";
+import PostCard from "../../components/PostCard.astro";
+import Author from "../../components/Author.astro";
+import Tags from "../../components/Tags.astro";
+
+const posts = (await getCollection("blog")).sort(
+  (a, b) => +b.data.pubDate - +a.data.pubDate,
+);
+
+const first = posts[0];
+if (!first) throw new Error("No posts found");
+---
+
+<StarlightPage
+  frontmatter={{
+    title: "Alumnium Blog",
+    description: "Alumnium blog with news, updates, and guides",
+    template: "splash",
+    bare: true,
+  }}
+  hasSidebar={false}
+>
+  <main
+    class="not-content w-full max-w-5xl m-auto px-2 pt-5 pb-10 sm:px-10 sm:py-10"
+  >
+    <section>
+      <ul class="list-none flex flex-col px-2 items-center gap-8 sm:gap-10">
+        <li class="w-full">
+          <a href={`/blog/${first.id.slice(11)}/`} class="no-underline">
+            <PostCard
+              title={first.data.title}
+              date={first.data.pubDate}
+              author={first.data.author}
+              tags={first.data.tags}
+              style="list"
+            />
+          </a>
+        </li>
+
+        {
+          posts.slice(1).map((post) => (
+            <li class="w-full max-w-screen-xs border-b border-del-light dark:border-del-dark pb-8 sm:pb-10 last:border-none last:pb-0">
+              <a
+                href={`/blog/${post.id.slice(11)}/`}
+                class="no-underline flex flex-col gap-3"
+              >
+                <h3 class="text-2xl sm:text-3xl font-bold leading-tight text-black dark:text-white">
+                  {post.data.title}
+                </h3>
+
+                <div class="flex flex-row gap-2 items-center text-gray-500 dark:text-gray-400">
+                  <Author prefix="By" author={post.data.author} />
+                  <span>·</span>
+                  <FormattedDate date={post.data.pubDate} />
+                </div>
+
+                <Tags tags={post.data.tags} />
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+  </main>
+</StarlightPage>

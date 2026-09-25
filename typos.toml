@@ -1,0 +1,5 @@
+[default]
+
+[default.extend-words]
+alumnium = "alumnium"
+evalite = "evalite"

@@ -1,0 +1,11 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "ignorePatterns": [
+    "**/pyproject.toml",
+    // TODO: Enable it for Java too
+    "packages/java/**/*",
+    "websites/homepage/**/*",
+    "**/__fixtures__/**/*"
+  ],
+  "printWidth": 80
+}

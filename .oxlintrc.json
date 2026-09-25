@@ -1,0 +1,41 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["import"],
+  "options": {
+    "typeAware": true
+  },
+  "categories": {},
+  "rules": {
+    "restrict-template-expressions": "off", // Allow implicit string coercion in template literals.
+    // TODO: Create an issue in Oxlint or corresponding ESLint repo.
+    "typescript/no-base-to-string": "off", // Useful but fails to detect branded types
+    // TODO: Create an issue in Oxlint suggesting to add `exactOptionalPropertyTypes` support.
+    "typescript/no-duplicate-type-constituents": "off", // Useful but fails on optional arguments with `| undefined`
+
+    // Disallow circular dependencies (except for types).
+    "import/no-cycle": "error"
+  },
+  "settings": {
+    "jsdoc": {
+      "ignorePrivate": false,
+      "ignoreInternal": false,
+      "ignoreReplacesDocs": true,
+      "overrideReplacesDocs": true,
+      "augmentsExtendsReplacesDocs": false,
+      "implementsReplacesDocs": false,
+      "exemptDestructuredRootsFromChecks": false,
+      "tagNamePreference": {}
+    },
+    "vitest": {
+      "typecheck": false
+    }
+  },
+  "env": {
+    "builtin": true
+  },
+  "globals": {},
+  "ignorePatterns": [
+    // TODO: Enable it for Java too
+    "packages/java/**/*"
+  ]
+}

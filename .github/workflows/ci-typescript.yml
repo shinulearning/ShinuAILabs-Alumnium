@@ -1,0 +1,161 @@
+name: TypeScript
+on:
+  workflow_call:
+    inputs:
+      sha:
+        required: true
+        type: string
+      drivers:
+        description: JSON array of drivers to run system tests with.
+        required: false
+        type: string
+        default: '["maestro-android", "maestro-ios", "playwright", "selenium"]'
+      models:
+        description: JSON array of model providers to test with.
+        required: false
+        type: string
+        default: '["azure_openai"]'
+
+env:
+  ALUMNIUM_LOG_LEVEL: debug
+  ALUMNIUM_LOG_DEBUG_EXTRA: all
+  ALUMNIUM_PLAYWRIGHT_HEADLESS: false
+  ALUMNIUM_TEST_RETRY_COUNT: 3
+  ALUMNIUM_TEST_RETRY_DELAY: 1000
+  DISPLAY: :99
+  LT_USERNAME: ${{ secrets.LT_USERNAME }}
+  LT_ACCESS_KEY: ${{ secrets.LT_ACCESS_KEY }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+  AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
+  AZURE_FOUNDRY_API_KEY: ${{ secrets.AZURE_FOUNDRY_API_KEY }}
+  AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+  AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+  CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+  DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+  GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+  MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+  XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+
+jobs:
+  test-system:
+    name: System Tests
+    runs-on: ${{ matrix.driver == 'maestro-ios' && 'macos-latest' || 'ubuntu-latest' }}
+    timeout-minutes: 60
+    env:
+      ALUMNIUM_DRIVER: ${{ matrix.driver }}
+      ALUMNIUM_MODEL: ${{ matrix.model }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        driver: ${{ fromJSON(inputs.drivers) }}
+        model: ${{ fromJSON(inputs.models) }}
+
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.sha || github.sha }}
+
+      - name: Set Up Dev Env
+        uses: ./.github/actions/setup
+
+      - name: Test System
+        uses: ./.github/actions/test-system
+        with:
+          package: typescript
+          driver: ${{ matrix.driver }}
+          model: ${{ matrix.model }}
+          sha: ${{ inputs.sha }}
+
+      - name: Build Dist
+        run: mise //packages/typescript:build
+
+      - name: Upload Test Artifacts
+        if: always()
+        uses: ./.github/actions/test-artifacts
+        with:
+          name: system-${{ matrix.driver }}-${{ matrix.model }}
+          typescript: true
+
+      - name: Upload Alumnium Artifacts
+        if: always()
+        uses: ./.github/actions/alumnium-artifacts
+        with:
+          name: ci-typescript-test-system-${{ matrix.driver }}-${{ matrix.model }}
+          package: typescript
+
+      - name: Debug Session
+        if: failure() && runner.debug == '1'
+        uses: mxschmitt/action-tmate@v3
+
+  test-pkg:
+    name: Package Tests
+    runs-on: ubuntu-latest
+    env:
+      ALUMNIUM_MODEL: azure_openai
+
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.sha || github.sha }}
+
+      - name: Set Up Dev Env
+        uses: ./.github/actions/setup
+
+      - name: Set Up Playwright
+        uses: ./.github/actions/setup-playwright
+        with:
+          package: typescript
+
+      - name: Build Dist
+        run: mise //packages/typescript:build
+
+      - name: Run npm Tests
+        run: mise //packages/typescript:test/package
+
+      - name: Upload Alumnium Artifacts
+        if: always()
+        uses: ./.github/actions/alumnium-artifacts
+        with:
+          name: ci-typescript-test-pkg
+          package: typescript
+
+      - name: Run Playwright Post-Setup
+        if: always()
+        uses: ./.github/actions/setup-playwright/post
+        with:
+          package: typescript
+
+      - name: Debug Session
+        if: failure() && runner.debug == '1'
+        uses: mxschmitt/action-tmate@v3
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.sha || github.sha }}
+
+      - name: Set Up Dev Env
+        uses: ./.github/actions/setup
+
+      - name: Build Dist
+        run: mise //packages/typescript:build
+
+      - name: Upload npm Artifacts
+        uses: ./.github/actions/dist-artifacts
+        with:
+          name: build
+          npm: true
+
+      - name: Debug Session
+        if: failure() && runner.debug == '1'
+        uses: mxschmitt/action-tmate@v3

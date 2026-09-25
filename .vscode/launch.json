@@ -1,0 +1,35 @@
+{
+  "configurations": [
+    {
+      "type": "bun",
+      "request": "launch",
+      "name": "server#dev",
+      "program": "src/cli/bin.ts",
+      "args": ["server"],
+      "cwd": "${workspaceFolder}/packages/typescript"
+    },
+    {
+      "type": "bun",
+      "request": "launch",
+      "name": "server#dev:debug",
+      "program": "src/cli/bin.ts",
+      "args": ["server"],
+      "cwd": "${workspaceFolder}/packages/typescript",
+      "stopOnEntry": true
+    },
+
+    //#region docs
+
+    // docs#dev
+    {
+      "name": "docs#dev",
+      "type": "editor-browser",
+      "request": "launch",
+      "url": "http://localhost:4321",
+      "webRoot": "${workspaceFolder}/websites/docs",
+      "preLaunchTask": "docs#dev"
+    }
+
+    //#endregion
+  ]
+}

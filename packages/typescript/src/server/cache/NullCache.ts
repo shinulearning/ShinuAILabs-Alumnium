@@ -1,0 +1,58 @@
+import type { LanguageModelV4GenerateResult } from "@ai-sdk/provider";
+import { Tracer } from "../../telemetry/Tracer.ts";
+import { ServerCache } from "./ServerCache.ts";
+
+const tracer = Tracer.get(import.meta.url);
+const { span } = tracer.dec();
+
+export class NullCache extends ServerCache {
+  override async lookup(
+    _request: ServerCache.CacheRequest,
+  ): Promise<LanguageModelV4GenerateResult | null> {
+    return tracer.span("cache.lookup", this.#spanAttrs(), (span) => {
+      span.event("cache.lookup.miss", {
+        ...this.#spanAttrs(),
+        "cache.lookup.miss.reason": "unimplemented",
+      });
+      return null;
+    });
+  }
+
+  override async update(
+    _request: ServerCache.CacheRequest,
+    _result: LanguageModelV4GenerateResult,
+  ): Promise<void> {
+    return tracer.span("cache.update", this.#spanAttrs(), (span) => {
+      span.event("cache.update.skip", {
+        ...this.#spanAttrs(),
+        "cache.update.skip.reason": "unimplemented",
+      });
+    });
+  }
+
+  @span("cache.save", spanAttrs)
+  async save(): Promise<void> {
+    return;
+  }
+
+  @span("cache.discard", spanAttrs)
+  async discard(): Promise<void> {
+    return;
+  }
+
+  @span("cache.clear", spanAttrs)
+  async clear(): Promise<void> {
+    return;
+  }
+
+  #spanAttrs(): Tracer.SpansCacheAttrsBase {
+    return spanAttrs.call(this);
+  }
+}
+
+function spanAttrs(this: NullCache): Tracer.SpansCacheAttrsBase {
+  return {
+    "app.id": this.app,
+    "cache.layer": "null",
+  };
+}

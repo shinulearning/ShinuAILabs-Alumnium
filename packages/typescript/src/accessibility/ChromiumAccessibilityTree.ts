@@ -1,0 +1,327 @@
+import { always } from "alwaysly";
+import { Element } from "domhandler";
+import { Telemetry } from "../telemetry/Telemetry.ts";
+import { Xml } from "../xml/Xml.ts";
+import { XmlRenderer } from "../xml/XmlRenderer.ts";
+import type { AccessibilityElement } from "./AccessibilityElement.ts";
+import { BaseAccessibilityTree } from "./BaseAccessibilityTree.ts";
+
+const { tracer } = Telemetry.get(import.meta.url);
+const { span } = tracer.dec();
+const PRESERVE_FALSE_ATTRS = new Set(["checked"]);
+
+interface CDPNode {
+  nodeId?: string | number;
+  parentId?: string | number | null;
+  backendDOMNodeId?: number;
+  role?: { value?: string };
+  name?: { value?: string };
+  ignored?: boolean;
+  properties?: Array<{
+    name?: string;
+    value?: unknown;
+  }>;
+  childIds?: Array<string | number>;
+  _frame?: object;
+  _parent_iframe_backend_node_id?: number;
+  _frame_chain?: number[];
+}
+
+export class ChromiumAccessibilityTree extends BaseAccessibilityTree<
+  Record<string, unknown> | string
+> {
+  #cdpResponse: Record<string, unknown>;
+  // TODO: There's a bug in Bun that results in `#nextRawId` compiled to
+  // `__privateGet(this, _nextRawId)++;` which causes a runtime error.
+  // Figure out a solution to use private fields without breaking Bun
+  // compatibility.
+  private nextRawId: number = 0;
+  #frameMap: Record<number, object> = {}; // raw_id -> Frame object for iframe support
+  #frameChainMap: Record<number, number[]> = {}; // raw_id -> frame chain (list of iframe backendNodeIds)
+
+  protected override get kind(): string {
+    return "chromium";
+  }
+
+  constructor(
+    cdpResponseOrXml: Record<string, unknown> | string,
+    frameMap?: Record<number, object>,
+  ) {
+    super(cdpResponseOrXml);
+
+    if (typeof cdpResponseOrXml === "object") {
+      this.#cdpResponse = cdpResponseOrXml;
+      return;
+    }
+
+    this.#cdpResponse = {};
+    this.xml = cdpResponseOrXml;
+    if (frameMap) this.#frameMap = frameMap;
+  }
+
+  /** Convert CDP response to raw XML format preserving all data. */
+  @span("driver.tree.to_str", { "driver.tree.platform": "chromium" })
+  toStr(): string {
+    if (this.xml !== null) {
+      return this.xml;
+    }
+
+    const nodes = (this.#cdpResponse.nodes as CDPNode[] | undefined) ?? [];
+    if (nodes.length === 0) {
+      return (this.xml = "");
+    }
+
+    // Create a lookup table for nodes by their ID
+    const nodeLookup: Record<string, CDPNode> = {};
+    for (const node of nodes) {
+      if (node.nodeId !== undefined) {
+        nodeLookup[String(node.nodeId)] = node;
+      }
+    }
+
+    // Build mapping: backendDOMNodeId -> list of iframe child root nodes
+    // This allows us to inline iframe content inside their parent <Iframe> elements
+    const iframeChildren: Record<number, CDPNode[]> = {};
+    const trueRoots: CDPNode[] = [];
+
+    for (const node of nodes) {
+      if (!node.parentId) {
+        const parentIframeId = node._parent_iframe_backend_node_id;
+        if (parentIframeId) {
+          iframeChildren[parentIframeId] ??= [];
+          iframeChildren[parentIframeId].push(node);
+        } else {
+          trueRoots.push(node);
+        }
+      }
+    }
+
+    // Build tree structure and convert to XML (only from true roots)
+    const rootNodes: Element[] = [];
+    for (const node of trueRoots) {
+      const xmlNode = this.#nodeToXml(node, nodeLookup, iframeChildren);
+      rootNodes.push(xmlNode);
+    }
+
+    // Combine all root nodes into a single XML string
+    let xmlString = "";
+    for (const root of rootNodes) {
+      xmlString += XmlRenderer.render([root], {
+        preserveFalseAttrs: PRESERVE_FALSE_ATTRS,
+      });
+    }
+
+    this.xml = xmlString;
+    return this.xml;
+  }
+
+  /** Convert a CDP node to XML element, recursively processing children. */
+  #nodeToXml(
+    node: CDPNode,
+    nodeLookup: Record<string, CDPNode>,
+    iframeChildren: Record<number, CDPNode[]>,
+  ): Element {
+    // Create element with role as tag
+    const role = node.role?.value ?? "unknown";
+    const elem = new Element(role, {});
+
+    // Add our own sequential raw_id attribute
+    this.nextRawId++;
+    elem.attribs["raw_id"] = String(this.nextRawId);
+
+    // Store frame reference if present (for iframe support)
+    if ("_frame" in node && node._frame) {
+      this.#frameMap[this.nextRawId] = node._frame;
+    }
+
+    // Store frame chain if present (for Selenium nested frame switching)
+    if ("_frame_chain" in node && node._frame_chain) {
+      this.#frameChainMap[this.nextRawId] = node._frame_chain;
+    }
+
+    // Add all node attributes as XML attributes
+    if ("backendDOMNodeId" in node && node.backendDOMNodeId !== undefined) {
+      elem.attribs["backendDOMNodeId"] = String(node.backendDOMNodeId);
+    }
+    if ("nodeId" in node && node.nodeId !== undefined) {
+      elem.attribs["nodeId"] = String(node.nodeId);
+    }
+    if ("ignored" in node && node.ignored !== undefined) {
+      elem.attribs["ignored"] = String(node.ignored);
+    }
+
+    // Add name as attribute if present
+    if ("name" in node && node.name && "value" in node.name) {
+      elem.attribs["name"] = String(node.name.value);
+    }
+
+    // Add value as attribute if present
+    if (
+      "value" in node &&
+      typeof node.value === "object" &&
+      node.value &&
+      "value" in node.value
+    ) {
+      elem.attribs["value"] = String(node.value.value);
+    }
+
+    // Add properties as attributes
+    for (const prop of node.properties || []) {
+      const propName = prop.name ?? "";
+      const propValue = prop.value ?? {};
+      if (
+        typeof propValue === "object" &&
+        propValue !== null &&
+        "value" in (propValue as Record<string, unknown>)
+      ) {
+        elem.attribs[propName] = String(
+          (propValue as { value?: unknown }).value,
+        );
+      } else if (typeof propValue === "object" && propValue !== null) {
+        // Complex property values (like nodeList) are converted to empty string
+        elem.attribs[propName] = "";
+      } else {
+        elem.attribs[propName] = String(propValue);
+      }
+    }
+
+    // Process children recursively
+    if (node.childIds) {
+      for (const childIdAny of node.childIds) {
+        const childId = String(childIdAny);
+        if (nodeLookup[childId]) {
+          const childElem = this.#nodeToXml(
+            nodeLookup[childId],
+            nodeLookup,
+            iframeChildren,
+          );
+          childElem.parent = elem;
+          if (elem.children.length > 0) {
+            const prev = elem.children[elem.children.length - 1];
+            always(prev);
+            prev.next = childElem;
+            childElem.prev = prev;
+          }
+          elem.children.push(childElem);
+        }
+      }
+    }
+
+    // Inline iframe content: if this element is an iframe, add its child trees
+    const backendNodeId = node.backendDOMNodeId;
+    const iframeRoots = backendNodeId
+      ? iframeChildren[backendNodeId]
+      : undefined;
+    if (backendNodeId && iframeRoots) {
+      delete iframeChildren[backendNodeId];
+      for (const childRoot of iframeRoots) {
+        const childElem = this.#nodeToXml(
+          childRoot,
+          nodeLookup,
+          iframeChildren,
+        );
+        childElem.parent = elem;
+        if (elem.children.length > 0) {
+          const prev = elem.children[elem.children.length - 1];
+          always(prev);
+          prev.next = childElem;
+          childElem.prev = prev;
+        }
+        elem.children.push(childElem);
+      }
+    }
+
+    return elem;
+  }
+
+  /**
+   * Find element by raw_id and return its properties for element finding.
+   *
+   * @param rawId The raw_id to search for
+   * @returns AccessibilityElement with backend_node_id set
+   */
+  @span("driver.tree.element_by_id", { "driver.tree.platform": "chromium" })
+  elementById(rawId: number): AccessibilityElement {
+    // Get raw XML with raw_id attributes
+    const rawXml = this.toStr();
+    const root = Xml.parseRoot(`<root>${rawXml}</root>`);
+    // Find element with matching raw_id
+    const findElement = (elem: Element, targetId: string): Element | null => {
+      if (elem.attribs["raw_id"] === targetId) {
+        return elem;
+      }
+      for (const child of Array.from(elem.children)) {
+        const childEl = Xml.nodeAsTag(child);
+        if (!childEl) {
+          continue;
+        }
+        const result = findElement(childEl, targetId);
+        if (result !== null) {
+          return result;
+        }
+      }
+      return null;
+    };
+
+    const element = findElement(root, String(rawId));
+    if (element === null) {
+      throw new Error(`No element with raw_id=${rawId} found`);
+    }
+
+    // Extract backendDOMNodeId for Chromium CDP nodes
+    const backendNodeIdStr = element.attribs["backendDOMNodeId"];
+    if (backendNodeIdStr === undefined) {
+      throw new Error(
+        `Element with raw_id=${rawId} has no backendDOMNodeId attribute`,
+      );
+    }
+
+    return {
+      type: element.tagName,
+      backendNodeId: parseInt(backendNodeIdStr),
+      frame: this.#frameMap[rawId],
+      frameChain: this.#frameChainMap[rawId],
+    };
+  }
+
+  /** Scope the tree to a smaller subtree identified by raw_id. */
+  @span("driver.tree.scope_to_area", { "driver.tree.platform": "chromium" })
+  scopeToArea(rawId: number): ChromiumAccessibilityTree {
+    const rawXml = this.toStr();
+
+    // Parse the XML
+    const root = Xml.parseRoot(`<root>${rawXml}</root>`);
+
+    // Find the element with the matching raw_id
+    const findElement = (elem: Element, targetId: string): Element | null => {
+      if (elem.attribs["raw_id"] === targetId) {
+        return elem;
+      }
+      for (const child of Array.from(elem.children)) {
+        const childEl = Xml.nodeAsTag(child);
+        if (!childEl) {
+          continue;
+        }
+        const result = findElement(childEl, targetId);
+        if (result !== null) {
+          return result;
+        }
+      }
+      return null;
+    };
+
+    const targetElem = findElement(root, String(rawId));
+
+    if (targetElem === null) {
+      // If not found, return original tree
+      return this;
+    }
+
+    // Convert the scoped element back to XML string
+    const scopedXml = XmlRenderer.render([targetElem], {
+      preserveFalseAttrs: PRESERVE_FALSE_ATTRS,
+    });
+
+    return new ChromiumAccessibilityTree(scopedXml, this.#frameMap);
+  }
+}

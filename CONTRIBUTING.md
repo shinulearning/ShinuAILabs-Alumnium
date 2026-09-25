@@ -1,0 +1,246 @@
+# Contributing to Alumnium
+
+## Welcome
+
+Thank you for your interest in contributing to Alumnium!
+
+Alumnium is an experimental AI-powered test automation solution that aims to simplify test interactions and assertions. Your contributions can help improve this project.
+
+## Project Understanding
+
+Before contributing, please review:
+
+- Our [README][1] and [documentation][2] help you understand Alumnium's vision of creating higher-level abstractions for test automation that simplify web page interactions and strengthen assertion mechanisms.
+- Our experimental status—we're in early development and value innovative approaches.
+- The core functionality that uses natural language processing to interpret testing commands.
+
+## Monorepo Structure
+
+Alumnium is organized as a monorepo with two main packages:
+
+- **`packages/typescript/`** - Core TypeScript implementation, MCP, and AI servers
+- **`packages/python/`** - Python client implementation
+
+Both packages share the same API and can be developed independently or together.
+
+## Finding Your Contribution Opportunity
+
+- Explore the [open issues][3] to find tasks matching your interests
+- We will be glad if you help us with:
+  - Improving test coverage for edge cases.
+  - Enhancing documentation and examples.
+  - Exploring more natural language prompts for test generation.
+  - Reporting usability issues or unexpected test behavior.
+  - Creating sample projects using Alumnium.
+
+## Contribution Workflow
+
+### 1. Environment Setup
+
+First, clone the repo:
+
+```bash
+# Fork and clone the repository
+git clone https://github.com/your-username/alumnium.git
+cd alumnium
+```
+
+Then install [mise] (see the [mise documentation][mise-install] for more installation instructions):
+
+```bash
+# Universal
+curl https://mise.run | sh
+
+# Homebrew
+brew install mise
+```
+
+Finally, install dependencies for the project:
+
+```bash
+mise install
+```
+
+### 2. Configure AI Provider Access
+
+Configure access to AI providers as mentioned in [docs][4].
+
+### 3. Development Guidelines
+
+When working on Alumnium:
+
+- Follow the existing code style and patterns in each package.
+- Ensure compatibility with Appium, Playwright, and Selenium.
+- Document new functionality with clear examples.
+- Test your changes thoroughly in the relevant package.
+
+#### Python Development
+
+```bash
+cd packages/python
+
+# Quick testing with REPL
+uv run python -i demo.py
+
+# Run BDD system tests
+TEST_ONLY=behave mise :test/system
+
+# Run pytest system tests
+TEST_ONLY=pytest mise :test/system
+
+# Run all system tests
+mise :test/system
+
+# Run system tests with specific driver
+mise :test/system:selenium
+mise :test/system:playwright
+mise :test/system:appium-ios
+mise :test/system:appium-android
+
+# Run unit tests
+mise :test/unit
+
+# Format code
+mise :format
+
+# Check types
+mise :types
+
+# Run linter
+mise :lint
+```
+
+#### TypeScript Development
+
+```bash
+cd packages/typescript
+
+# Run system tests
+mise :test/system
+
+# Run system tests with specific driver
+mise :test/system:selenium
+mise :test/system:playwright
+mise :test/system:appium-ios
+mise :test/system:appium-android
+mise :test/system:maestro-ios
+mise :test/system:maestro-android
+
+# Run unit tests
+mise :test/unit
+
+# Format code
+mise :format
+
+# Check types
+mise :types
+
+# Run linter
+mise :lint
+```
+
+#### Monorepo Commands
+
+From the root directory, you can use `mise` commands:
+
+```bash
+# Run system tests for all packages
+mise :test/system
+
+# Run unit tests for all packages
+mise :test/unit
+
+# Format code for all packages
+mise :format
+
+# Check types for all packages
+mise :types
+```
+
+### 4. Environment Variables
+
+For local development, you may need to configure the following environment variables:
+
+| Variable Name        | Description                                                                                              | Default Value             |
+| -------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------- |
+| `ALUMNIUM_DRIVER`    | Driver to use for tests (selenium, playwright, appium-ios, appium-android, maestro-ios, maestro-android) | `selenium`                |
+| `ALUMNIUM_MODEL`     | AI model provider (anthropic, openai, google, etc.)                                                      | `openai`                  |
+| `ALUMNIUM_LOG_PATH`  | Path to the alumnium log directory                                                                       | `stdout(logs to console)` |
+| `ALUMNIUM_LOG_LEVEL` | Log level or configuration value                                                                         | `WARNING`                 |
+| `ALUMNIUM_CACHE`     | Cache provider or disable it                                                                             | `filesystem`              |
+
+### 5. Pull Request Process
+
+1. **Create a focused branch** for your contribution.
+2. **Write meaningful commit messages** explaining your changes. We use the [Conventional Commits][5] format.
+3. **Include tests** that verify your contribution works as expected.
+4. **Update documentation** if you're adding or changing features.
+5. **Maintain API parity** - If adding features to one package, consider implementing them in both Python and TypeScript.
+6. **Submit your PR** with a clear description of what it accomplishes.
+
+### 6. Continuous Integration
+
+Every pull request runs build, formatting, lint, type and unit checks. System tests and agent
+evaluations also run automatically for pull requests opened from branches in this repository,
+using the `azure_openai` provider only. Pull requests from forks do not receive API keys, so
+their system tests are skipped until a maintainer runs them explicitly (see below).
+
+Maintainers can run the full suite manually from the _Actions_ tab or with the GitHub CLI:
+
+```bash
+# Run system tests for a fork pull request after reviewing its changes
+gh workflow run ci.yml -f pr=123
+
+# Run against specific providers and clients (every provider, driver and client is a checkbox input)
+gh workflow run ci.yml -f google=true -f anthropic=true -f typescript=false -f java=false -f selenium=false -f eval=false
+```
+
+Only `azure_openai` is checked by default. Every provider from `packages/typescript/src/Model.ts` is
+available, but only some have credentials configured in CI (azure_openai, anthropic, aws_anthropic,
+aws_meta, deepseek, google, mistralai, openai); the others will fail until secrets are added.
+
+## AI-First Testing Philosophy
+
+As contributors to an AI-powered testing tool, we value:
+
+- **Natural language over rigid syntax**: Tests should be readable by non-technical stakeholders.
+- **Adaptability over brittleness**: Tests should withstand UI changes.
+- **Intent over implementation**: Focus on what should happen, not how it happens.
+- **Context awareness**: Testing tools should understand the application under test.
+
+## Community Guidelines
+
+- Be respectful and constructive in all interactions. See the [Code of Conduct][6] for more details.
+- Share knowledge generously—we're all learning in this emerging field.
+- Value diverse perspectives—they lead to more robust solutions.
+- Ask questions when unclear—clarity benefits everyone.
+
+## For First-Time Contributors
+
+If you're new to open-source or AI-powered testing:
+
+1. Try running the demo and experimenting with the Alumnium API. Use the REPL (`poetry run python -i demo.py`) to explore functionality.
+2. Start with documentation improvements or simple bug fixes. Check out the [**good first issue**][7] label.
+3. Ask questions on GitHub, [Discord][8] or [Slack][9].
+4. Found a security issue? Please follow our [Security Policy][10] instead of opening a public issue.
+
+## Recognition
+
+All contributors will be acknowledged in our releases and documentation. As an experimental project on the cutting edge of testing technology, your contributions here represent pioneering work in the field.
+
+---
+
+Thank you for joining us in paving the road towards AI-powered test automation. Together, we can create more intuitive, maintainable, and powerful testing experiences.
+
+[1]: https://github.com/alumnium-hq/alumnium?tab=readme-ov-file
+[2]: https://alumnium.ai/docs/
+[3]: https://github.com/alumnium-hq/alumnium/issues
+[4]: https://alumnium.ai/docs/getting-started/configuration/
+[5]: https://www.conventionalcommits.org/en/v1.0.0/
+[6]: ./CODE_OF_CONDUCT.md
+[7]: https://github.com/alumnium-hq/alumnium/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22
+[8]: https://discord.gg/45hYBf3U
+[9]: https://seleniumhq.slack.com/channels/alumnium
+[10]: ./SECURITY.md
+[mise]: https://mise.jdx.dev/
+[mise-install]: https://mise.jdx.dev/installing-mise.html

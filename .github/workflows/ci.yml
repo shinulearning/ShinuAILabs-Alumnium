@@ -1,0 +1,217 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: 0 0 * * *
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: >-
+          Pull request number to test instead of the selected branch. Use this to run
+          the full suite (with secrets) against a fork PR after reviewing its changes.
+        type: string
+        required: false
+        default: ""
+      eval:
+        description: Run agent evaluations
+        type: boolean
+        default: true
+      java:
+        description: Run Java client tests
+        type: boolean
+        default: true
+      typescript:
+        description: Run TypeScript client tests
+        type: boolean
+        default: true
+      python:
+        description: Run Python client tests
+        type: boolean
+        default: true
+      appium-android:
+        description: Run Appium (Android) driver tests
+        type: boolean
+        default: false
+      appium-ios:
+        description: Run Appium (iOS) driver tests
+        type: boolean
+        default: false
+      maestro-android:
+        description: Run Maestro (Android) driver tests
+        type: boolean
+        default: true
+      maestro-ios:
+        description: Run Maestro (iOS) driver tests
+        type: boolean
+        default: true
+      playwright:
+        description: Run Playwright driver tests
+        type: boolean
+        default: true
+      selenium:
+        description: Run Selenium driver tests
+        type: boolean
+        default: true
+      azure_openai:
+        description: Test on Azure OpenAI provider
+        type: boolean
+        default: true
+      anthropic:
+        description: Test on Anthropic provider
+        type: boolean
+        default: false
+      cursor:
+        description: Test on Cursor provider
+        type: boolean
+        default: false
+      deepseek:
+        description: Test on DeepSeek provider
+        type: boolean
+        default: false
+      google:
+        description: Test on Google provider
+        type: boolean
+        default: false
+      mistralai:
+        description: Test on MistralAI provider
+        type: boolean
+        default: false
+      openai:
+        description: Test on OpenAI provider
+        type: boolean
+        default: false
+      xai:
+        description: Test on xAI provider
+        type: boolean
+        default: false
+
+concurrency:
+  group: ci-${{ inputs.pr || github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  ALUMNIUM_LOG_DEBUG_EXTRA: all
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.params.outputs.sha }}
+      drivers: ${{ steps.params.outputs.drivers }}
+      models: ${{ steps.params.outputs.models }}
+      run-eval: ${{ steps.params.outputs.run-eval }}
+      run-java: ${{ steps.params.outputs.run-java }}
+      run-python: ${{ steps.params.outputs.run-python }}
+      run-typescript: ${{ steps.params.outputs.run-typescript }}
+
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.pr && format('refs/pull/{0}/merge', inputs.pr) || github.sha }}
+
+      - name: Preflight
+        id: params
+        uses: ./.github/actions/preflight
+        with:
+          workflow-inputs: ${{ toJSON(inputs) }}
+
+      - name: Set Up Dev Env
+        uses: ./.github/actions/setup
+        with:
+          python-cache: true
+
+      - name: Build
+        run: mise :build
+
+      - name: Check Formatting
+        run: mise :format/check
+
+      - name: Lint
+        run: mise :lint
+
+      - name: Check Types
+        run: mise :types
+
+      - name: Unit Tests
+        run: mise :test/unit
+
+      - name: Upload Binaries Artifacts
+        uses: ./.github/actions/dist-artifacts
+        with:
+          name: build
+          bin: true
+
+      - name: Upload Test Artifacts
+        if: always()
+        uses: ./.github/actions/test-artifacts
+        with:
+          name: ci
+          typescript: true
+          python: true
+
+      - name: Upload Alumnium Artifacts
+        if: always()
+        uses: ./.github/actions/alumnium-artifacts
+        with:
+          name: ci-test
+          package: typescript
+
+      - name: Run Post-Setup
+        if: always()
+        uses: ./.github/actions/setup/post
+
+      - name: Debug Session
+        if: failure() && runner.debug == '1'
+        uses: mxschmitt/action-tmate@v3
+
+  eval:
+    name: Eval
+    needs: test
+    secrets: inherit
+    if: needs.test.outputs.run-eval == 'true'
+    uses: ./.github/workflows/ci-eval.yml
+    with:
+      sha: ${{ needs.test.outputs.sha }}
+      models: ${{ needs.test.outputs.models }}
+
+  java:
+    name: Java
+    needs: test
+    secrets: inherit
+    if: needs.test.outputs.run-java == 'true'
+    uses: ./.github/workflows/ci-java.yml
+    with:
+      sha: ${{ needs.test.outputs.sha }}
+      models: ${{ needs.test.outputs.models }}
+      drivers: ${{ needs.test.outputs.drivers }}
+
+  python:
+    name: Python
+    needs: test
+    secrets: inherit
+    if: needs.test.outputs.run-python == 'true'
+    uses: ./.github/workflows/ci-python.yml
+    with:
+      sha: ${{ needs.test.outputs.sha }}
+      models: ${{ needs.test.outputs.models }}
+      drivers: ${{ needs.test.outputs.drivers }}
+
+  typescript:
+    name: TypeScript
+    needs: test
+    secrets: inherit
+    if: needs.test.outputs.run-typescript == 'true'
+    uses: ./.github/workflows/ci-typescript.yml
+    with:
+      sha: ${{ needs.test.outputs.sha }}
+      models: ${{ needs.test.outputs.models }}
+      drivers: ${{ needs.test.outputs.drivers }}

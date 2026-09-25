@@ -1,0 +1,38 @@
+---
+interface Props {
+  tags?: string[];
+  style?: "content" | "pattern";
+  size?: "md" | "sm";
+}
+
+const { tags, style = "content", size } = Astro.props;
+---
+
+<div>
+  {
+    tags && (
+      <div
+        class:list={[
+          "flex flex-wrap",
+          style === "pattern" && "justify-center max-w-xl",
+          style === "pattern" && size === "sm" ? "gap-1" : "gap-2",
+        ]}
+      >
+        {tags.map((tag) => (
+          <span
+            class:list={[
+              "rounded-full text-center leading-none capsize",
+              style === "content"
+                ? "text-gray-950 bg-gray-100 dark:text-gray-300 dark:bg-gray-800"
+                : "bg-accent-500/20 text-accent-200/80",
+              (!size || size === "md") && "text-sm px-3 py-1",
+              size === "sm" && "text-xs px-2 py-0.5",
+            ]}
+          >
+            {tag}
+          </span>
+        ))}
+      </div>
+    )
+  }
+</div>

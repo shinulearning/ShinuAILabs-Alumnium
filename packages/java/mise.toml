@@ -1,0 +1,76 @@
+[tools]
+java = "21"
+
+[tasks."install/playwright"]
+run = "./gradlew installPlaywright"
+# NOTE: On Debian-compatible Linux, it prompts for sudo to install OS dependencies.
+raw = true
+
+[tasks.build]
+run = "./gradlew build -x test"
+description = "Build main Java artifact"
+
+[tasks.lint]
+run = "./gradlew check -x test"
+
+[tasks.format]
+run = "./gradlew clean spotlessApply"
+description = "Apply Spotless formatting to Java and Gradle sources"
+
+[tasks.types]
+run = "./gradlew compileJava compileTestJava"
+description = "Check Java types correctness (compilation)"
+
+[tasks."format/check"]
+run = "./gradlew clean spotlessCheck"
+description = "Verify Spotless formatting (CI-style)"
+
+[tasks."publish/local"]
+run = "./gradlew publishToMavenLocal"
+description = "Publish main + classifier jars to local Maven repository"
+
+[tasks.publish]
+run = "./gradlew publishAndReleaseToMavenCentral --no-configuration-cache"
+description = "Publish main + CLI artifacts to Maven Central (auto-release)"
+
+[tasks."test/unit"]
+run = "./gradlew clean test --tests 'ai.alumnium.unit.*' --tests 'ai.alumnium.driver.*Test'"
+description = "Run unit tests"
+
+[tasks."test/system"]
+usage = '''
+arg "<driver>" help="Driver to use for system tests" {
+  choices "selenium" "playwright" "appium-ios" "appium-android"
+  default "selenium"
+}
+arg "[test]" help="System test to run" default=""
+'''
+run = "ALUMNIUM_DRIVER={{usage.driver}} ALUMNIUM_TEST_ARG={{usage.test}} ./scripts/test-system.sh"
+
+[tasks."test/system:playwright"]
+usage = '''
+arg "[test]" help="System test to run" default=""
+'''
+run = [{ task = "test/system", args = ["playwright", "{{usage.test}}"] }]
+
+[tasks."test/system:selenium"]
+usage = '''
+arg "[test]" help="System test to run" default=""
+'''
+run = [{ task = "test/system", args = ["selenium", "{{usage.test}}"] }]
+
+[tasks."test/system:appium-ios"]
+usage = '''
+arg "[test]" help="System test to run" default=""
+'''
+run = [{ task = "test/system", args = ["appium-ios", "{{usage.test}}"] }]
+
+[tasks."test/system:appium-android"]
+usage = '''
+arg "[test]" help="System test to run" default=""
+'''
+run = [{ task = "test/system", args = ["appium-android", "{{usage.test}}"] }]
+
+[tasks."test/package"]
+run = "./scripts/test-package.sh"
+description = "Test Maven package installation and CLI binary auto-start"

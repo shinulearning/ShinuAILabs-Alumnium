@@ -1,0 +1,101 @@
+from abc import ABC, abstractmethod
+
+from ..accessibility import BaseAccessibilityTree
+from . import Element
+from .keys import Key
+
+
+class BaseDriver(ABC):
+    @property
+    def accessibility_tree(self) -> BaseAccessibilityTree:
+        cached = getattr(self, "_cached_accessibility_tree", None)
+        if cached is None:
+            cached = self._fetch_accessibility_tree()
+            self.set_accessibility_tree(cached)
+        return cached
+
+    def set_accessibility_tree(self, tree: BaseAccessibilityTree):
+        self._cached_accessibility_tree = tree
+
+    def reset_accessibility_tree(self):
+        self._cached_accessibility_tree = None
+
+    @abstractmethod
+    def _fetch_accessibility_tree(self) -> BaseAccessibilityTree:
+        pass
+
+    @abstractmethod
+    def click(self, id: int):
+        pass
+
+    @abstractmethod
+    def drag_slider(self, id: int, value: float):
+        pass
+
+    @abstractmethod
+    def drag_and_drop(self, from_id: int, to_id: int):
+        pass
+
+    @abstractmethod
+    def press_key(self, key: Key):
+        pass
+
+    @abstractmethod
+    def quit(self):
+        pass
+
+    @abstractmethod
+    def back(self):
+        pass
+
+    @abstractmethod
+    def visit(self, url: str):
+        pass
+
+    @property
+    @abstractmethod
+    def screenshot(self) -> str:
+        pass
+
+    @abstractmethod
+    def scroll_to(self, id: int):
+        pass
+
+    @property
+    @abstractmethod
+    def title(self) -> str:
+        pass
+
+    @abstractmethod
+    def type(self, id: int, text: str):
+        pass
+
+    @property
+    @abstractmethod
+    def url(self) -> str:
+        pass
+
+    @property
+    @abstractmethod
+    def app(self) -> str:
+        pass
+
+    @abstractmethod
+    def find_element(self, id: int) -> Element:
+        pass
+
+    @abstractmethod
+    def execute_script(self, script: str):
+        pass
+
+    @abstractmethod
+    def switch_to_next_tab(self):
+        pass
+
+    @abstractmethod
+    def switch_to_previous_tab(self):
+        pass
+
+    @abstractmethod
+    def print_to_pdf(self, filepath: str):
+        pass

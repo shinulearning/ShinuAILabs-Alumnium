@@ -1,0 +1,149 @@
+[build-system]
+build-backend = "uv_build"
+requires = [
+    "uv_build>=0.11.2,<0.12",
+]
+
+[dependency-groups]
+dev = [
+    "behave-html-pretty-formatter>=1.12,<2.0.0",
+    "behave>=1.2.6,<2.0.0",
+    "httpx>=0.28.0,<0.29.0",
+    "poethepoet>=0.35.0,<0.36.0",
+    "pre-commit>=4.2.0,<5.0.0",
+    "pyprojectsort>=0.4.0,<0.5.0",
+    "pytest-asyncio>=1.3.0,<2.0.0",
+    "pytest-cov>=7.1.0,<8.0.0",
+    "pytest-html>=4.2.0,<5.0.0",
+    "pytest-retry>=1.7.0,<2.0.0",
+    "pytest>=9.0.3,<10.0.0",
+    "python-dotenv>=1.1.1,<2.0.0",
+    "ruff>=0.11.9,<0.12.0",
+    "ty>=0.0.26,<0.0.27",
+]
+
+[project]
+authors = [
+    { email = "koss@nocorp.me", name = "Sasha Koss" },
+    { email = "p0deje@gmail.com", name = "Alex Rodionov" },
+    { email = "tati.shep@gmail.com", name = "Tatiana Shepeleva" },
+]
+dependencies = [
+    "alumnium-cli==0.22.0; (sys_platform == 'linux' or sys_platform == 'darwin' or sys_platform == 'win32') and (platform_machine == 'x86_64' or platform_machine == 'amd64' or platform_machine == 'AMD64' or platform_machine == 'aarch64' or platform_machine == 'arm64' or platform_machine == 'ARM64')",
+    "appium-python-client>=5.1.1,<6.0.0",
+    "playwright>=1.49,<2.0",
+    "portpicker>=1.6.0",
+    "pydantic>=2.10.0,<3.0.0",
+    "requests>=2.33.1",
+    "retry2>=0.9,<0.10",
+    "rich>=14.0.0,<15.0.0",
+    "selenium>=4.0,<5.0",
+    "websocket-client>=1.8,<2.0",
+]
+description = "Pave the way towards AI-powered test automation."
+license = "MIT"
+name = "alumnium"
+readme = "README.md"
+requires-python = ">=3.10,<4.0"
+version = "0.22.0"
+
+[project.scripts]
+alumnium = "alumnium.cli:main"
+
+[project.urls]
+Homepage = "https://alumnium.ai"
+Repository = "https://github.com/alumnium-hq/alumnium"
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.coverage.report]
+exclude_lines = [
+    "def __repr__",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+    "pragma: no cover",
+    "raise NotImplementedError",
+]
+fail_under = 0
+show_missing = true
+skip_covered = false
+
+[tool.coverage.run]
+branch = true
+omit = [
+    "*/__pycache__/*",
+    "*/examples/*",
+    "*/tests/*",
+]
+source = [
+    "src/alumnium",
+]
+
+[tool.coverage.xml]
+output = "coverage.xml"
+
+[tool.pytest.ini_options]
+addopts = "-v --ignore tests/pip"
+asyncio_default_fixture_loop_scope = "function"
+generate_report_on_test = true
+pythonpath = "."
+
+[tool.ruff]
+extend-exclude = [
+    ".git",
+    ".venv",
+    "dist",
+    "log",
+    "reports",
+]
+line-length = 119
+
+[tool.ruff.lint]
+extend-select = [
+    "I",
+]
+ignore = [
+    "E402",
+    "F401",
+    "F403",
+    "F405",
+]
+select = [
+    "E",
+    "F",
+    "W",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"examples/behave/features/steps/*" = [
+    "F811",
+]
+
+[tool.uv.build-backend]
+module-name = "alumnium"
+module-root = "src"
+
+[[tool.uv.sources.alumnium-cli]]
+marker = "sys_platform == 'darwin' and (platform_machine == 'aarch64' or platform_machine == 'arm64' or platform_machine == 'ARM64')"
+path = "../typescript/dist/pip-alumnium-cli-darwin-arm64"
+
+[[tool.uv.sources.alumnium-cli]]
+marker = "sys_platform == 'darwin' and (platform_machine == 'x86_64' or platform_machine == 'amd64' or platform_machine == 'AMD64')"
+path = "../typescript/dist/pip-alumnium-cli-darwin-x64"
+
+[[tool.uv.sources.alumnium-cli]]
+marker = "sys_platform == 'linux' and (platform_machine == 'aarch64' or platform_machine == 'arm64' or platform_machine == 'ARM64')"
+path = "../typescript/dist/pip-alumnium-cli-linux-arm64"
+
+[[tool.uv.sources.alumnium-cli]]
+marker = "sys_platform == 'linux' and (platform_machine == 'x86_64' or platform_machine == 'amd64' or platform_machine == 'AMD64')"
+path = "../typescript/dist/pip-alumnium-cli-linux-x64"
+
+[[tool.uv.sources.alumnium-cli]]
+marker = "sys_platform == 'win32' and (platform_machine == 'aarch64' or platform_machine == 'arm64' or platform_machine == 'ARM64')"
+path = "../typescript/dist/pip-alumnium-cli-windows-arm64"
+
+[[tool.uv.sources.alumnium-cli]]
+marker = "sys_platform == 'win32' and (platform_machine == 'x86_64' or platform_machine == 'amd64' or platform_machine == 'AMD64')"
+path = "../typescript/dist/pip-alumnium-cli-windows-x64"

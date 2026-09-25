@@ -1,0 +1,47 @@
+{
+  "folders": [
+    {
+      "name": "ROOT",
+      "path": ".",
+    },
+    {
+      "name": "packages/java",
+      "path": "packages/java",
+    },
+    {
+      "name": "packages/python",
+      "path": "packages/python",
+    },
+    {
+      "name": "packages/typescript",
+      "path": "packages/typescript",
+    },
+    {
+      "name": "websites/docs",
+      "path": "websites/docs",
+    },
+  ],
+  "settings": {
+    "cSpell.flagWords": ["Aluminium", "aluminium", "Aluminum", "aluminum"],
+    "cSpell.words": ["alumnium", "Alumnium", "Ollama"],
+    "editor.defaultFormatter": "oxc.oxc-vscode",
+    "files.exclude": {
+      "packages/**": true,
+      "websites/**": true,
+    },
+    "js/ts.experimental.useTsgo": true,
+    "search.exclude": {
+      "**/dist": true,
+      "**/node_modules": true,
+    },
+    "testing.automaticallyOpenPeekView": "never",
+    "[javascript]": {
+      "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit",
+        "source.fixAll": "explicit",
+      },
+    },
+    "java.compile.nullAnalysis.mode": "automatic",
+    "java.configuration.updateBuildConfiguration": "automatic",
+  },
+}

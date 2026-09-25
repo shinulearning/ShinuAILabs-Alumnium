@@ -1,0 +1,70 @@
+name: Test System
+description: Run system tests for a given package, driver, and model.
+
+inputs:
+  package:
+    required: true
+    description: "Package to test (typescript, python, java)."
+
+  driver:
+    required: true
+    description: "Driver to use in system tests (selenium, playwright, appium-ios, appium-android, maestro-ios, maestro-android)."
+
+  model:
+    required: true
+    description: "Model to use in system tests (e.g., azure_openai, google)."
+
+  sha:
+    required: true
+    description: "Git SHA to use for caching."
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set Up Playwright
+      uses: ./.github/actions/setup-playwright
+      if: inputs.driver == 'playwright'
+      with:
+        package: ${{ inputs.package }}
+
+    - name: Set Up Maestro
+      uses: ./.github/actions/setup-maestro
+      if: startsWith(inputs.driver, 'maestro')
+      with:
+        platform: ${{ inputs.driver == 'maestro-ios' && 'ios' || 'android' }}
+
+    - name: Restore Alumnium Cache
+      uses: actions/cache/restore@v5
+      with:
+        path: packages/${{ inputs.package }}/.alumnium/cache/
+        key: alumnium-cache-v5-${{ inputs.package }}-${{ inputs.driver }}-${{ inputs.model }}-${{ inputs.sha }}
+        restore-keys: alumnium-cache-v5-${{ inputs.package }}-${{ inputs.driver }}-${{ inputs.model }}-
+
+    - name: Prepare Display
+      if: runner.os == 'Linux' && !startsWith(inputs.driver, 'appium') && !startsWith(inputs.driver, 'maestro')
+      run: Xvfb ${{ env.DISPLAY }} -screen 0 1600x1200x24 &
+      shell: bash
+
+    - name: System Tests
+      run: mise //packages/${{ inputs.package }}:test/system:${{ inputs.driver }}
+      shell: bash
+      env:
+        ALUMNIUM_TEST_PASS_THRESHOLD_PCT: 93
+        ALUMNIUM_LOG_DEBUG_EXTRA: all
+        ALUMNIUM_LOG_OBJECTS_DEPTH: false
+        ALUMNIUM_LOG_MAX_STR_LENGTH: false
+        ALUMNIUM_DEV_CAPTURE_TREES: true
+        ALUMNIUM_TEST_MAX_CONCURRENCY: 1
+
+    - name: Save Alumnium Cache
+      if: always()
+      uses: actions/cache/save@v5
+      with:
+        path: packages/${{ inputs.package }}/.alumnium/cache/
+        key: alumnium-cache-v5-${{ inputs.package }}-${{ inputs.driver }}-${{ inputs.model }}-${{ inputs.sha }}
+
+    - name: Run Playwright Post-Setup
+      uses: ./.github/actions/setup-playwright/post
+      if: inputs.driver == 'playwright'
+      with:
+        package: ${{ inputs.package }}

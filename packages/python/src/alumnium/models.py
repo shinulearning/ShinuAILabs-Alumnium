@@ -1,0 +1,57 @@
+from enum import Enum
+from os import getenv
+
+
+class Provider(Enum):
+    AZURE_OPENAI = "azure_openai"
+    AZURE_FOUNDRY = "azure_foundry"
+    ANTHROPIC = "anthropic"
+    AWS_ANTHROPIC = "aws_anthropic"
+    AWS_META = "aws_meta"
+    CODEX = "codex"
+    CURSOR = "cursor"
+    DEEPSEEK = "deepseek"
+    GOOGLE = "google"
+    MISTRALAI = "mistralai"
+    OLLAMA = "ollama"
+    OPENAI = "openai"
+    OPENROUTER = "openrouter"
+    XAI = "xai"
+
+
+class Name:
+    DEFAULT = {
+        Provider.AZURE_FOUNDRY: "gpt-5.6-luna",
+        Provider.AZURE_OPENAI: "gpt-5.6-luna",
+        Provider.ANTHROPIC: "claude-haiku-4-5-20251001",
+        Provider.AWS_ANTHROPIC: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+        Provider.AWS_META: "us.meta.llama4-maverick-17b-instruct-v1:0",
+        Provider.CODEX: "gpt-5.6-luna",
+        Provider.CURSOR: "composer-2.5",
+        Provider.DEEPSEEK: "deepseek-flash",
+        Provider.GOOGLE: "gemini-3.5-flash-lite",
+        Provider.MISTRALAI: "mistral-medium-3-5",
+        Provider.OLLAMA: "qwen3.6",
+        Provider.OPENAI: "gpt-5.6-luna",
+        Provider.OPENROUTER: "openai/gpt-5.6-luna",
+        Provider.XAI: "grok-4.3",
+    }
+
+
+class Model:
+    def __init__(self, provider=None, name=None):
+        self.provider = Provider(provider or Provider.OPENAI)
+        self.name = name or Name.DEFAULT.get(self.provider, "")
+
+    @staticmethod
+    def from_string(model: str) -> "Model":
+        provider, *name = model.lower().split("/", maxsplit=1)
+        return Model(provider, name[0] if name else None)
+
+    @staticmethod
+    def from_env() -> "Model | None":
+        provider, *name = getenv("ALUMNIUM_MODEL", "").lower().split("/", maxsplit=1)
+        if not provider:
+            return None
+
+        return Model(provider, name[0] if name else None)

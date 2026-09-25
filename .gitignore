@@ -1,0 +1,65 @@
+# Python
+*.pyc
+**/__pycache__/
+**/.pytest_cache/
+**/.ruff_cache/
+**/.venv/
+**/log/
+**/reports/
+
+# Node
+**/node_modules/
+**/playwright-report/
+**/test-results/
+**/.astro/
+**/.ts/
+
+# Build Artifacts
+**/dist/
+/websites/docs/public/install.sh
+/websites/docs/public/install.ps1
+
+# Coverage
+**/htmlcov/
+**/coverage/
+**/.nyc_output/
+**/.coverage
+**/coverage.xml
+*.lcov
+
+# Environment variables
+.env
+.envrc
+**/.dev.vars
+
+# Cloudflare
+**/.wrangler/
+
+# Local mise
+mise.local.toml
+
+# Alumnium
+**/.alumnium/
+
+# Temporary files
+**/tmp/
+
+# AIs
+**/.claude/settings.local.json
+
+# Playwright
+**/.agents/skills/playwright-cli/
+**/.claude/skills/playwright-cli/
+**/.playwright-cli/
+**/.playwright-mcp/
+
+# OS
+.DS_Store
+Thumbs.db
+*:Zone.Identifier
+
+# Assets
+*~lock~*
+
+# Managed by VS Code Orchardist extension:
+alumnium.wt.code-workspace

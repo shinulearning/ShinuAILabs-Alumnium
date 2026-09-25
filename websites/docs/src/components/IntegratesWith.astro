@@ -1,0 +1,135 @@
+---
+import Logo from "./Logo.astro";
+
+import claude from "../assets/claude.svg";
+import deepseek from "../assets/deepseek.svg";
+import gemini from "../assets/gemini.svg";
+import meta from "../assets/meta.svg";
+import mistral from "../assets/mistral.svg";
+import openai from "../assets/openai.svg";
+import qwen from "../assets/qwen.svg";
+import grok from "../assets/grok.svg";
+
+import appium from "../assets/appium.svg";
+import maestro from "../assets/maestro.svg";
+import playwright from "../assets/playwright.svg";
+import selenium from "../assets/selenium.svg";
+---
+
+<div class="bg-primary-light dark:bg-primary-dark py-8 not-content">
+  <div class="mx-auto max-w-7xl">
+    <h2 class="text-center font-semibold text-header">Integrates with</h2>
+    <div
+      class="mx-auto mt-6 lg:mt-10 max-w-none gap-x-10 gap-y-10 flex justify-center items-center flex-wrap"
+    >
+      <Logo
+        {...{
+          //  @ts-expect-error -- Cloudflare types conflict with Astro types
+          src: claude.src,
+        }}
+        alt="Anthropic Claude"
+        className="h-20"
+        href="https://claude.ai"
+      />
+      <Logo
+        {...{
+          //  @ts-expect-error -- Cloudflare types conflict with Astro types
+          src: gemini.src,
+        }}
+        alt="Google Gemini"
+        className="h-20"
+        href="https://gemini.google.com"
+      />
+      <Logo
+        {...{
+          //  @ts-expect-error -- Cloudflare types conflict with Astro types
+          src: openai.src,
+        }}
+        alt="OpenAI"
+        className="h-20"
+        href="https://openai.com"
+      />
+      <Logo
+        {...{
+          //  @ts-expect-error -- Cloudflare types conflict with Astro types
+          src: grok.src,
+        }}
+        alt="xAI Grok"
+        className="h-20"
+        href="https://x.ai"
+      />
+      <Logo
+        {...{
+          //  @ts-expect-error -- Cloudflare types conflict with Astro types
+          src: meta.src,
+        }}
+        alt="Meta Llama"
+        className="h-20"
+        href="https://www.llama.com"
+      />
+      <Logo
+        {...{
+          //  @ts-expect-error -- Cloudflare types conflict with Astro types
+          src: deepseek.src,
+        }}
+        alt="DeepSeek"
+        className="h-20"
+        href="https://www.deepseek.com"
+      />
+      <Logo
+        {...{
+          //  @ts-expect-error -- Cloudflare types conflict with Astro types
+          src: mistral.src,
+        }}
+        alt="Mistral"
+        className="h-20"
+        href="https://mistral.ai"
+      />
+      <Logo
+        {...{
+          //  @ts-expect-error -- Cloudflare types conflict with Astro types
+          src: qwen.src,
+        }}
+        alt="Qwen"
+        className="h-12"
+        href="https://qwenlm.github.io"
+      />
+    </div>
+    <div
+      class="pt-5 mx-auto mt-6 lg:mt-5 max-w-none gap-x-10 gap-y-10 flex justify-center items-center flex-wrap"
+    >
+      <Logo
+        {...{
+          //  @ts-expect-error -- Cloudflare types conflict with Astro types
+          src: appium.src,
+        }}
+        alt="Appium"
+        href="https://appium.io"
+      />
+      <Logo
+        {...{
+          //  @ts-expect-error -- Cloudflare types conflict with Astro types
+          src: maestro.src,
+        }}
+        alt="Maestro"
+        href="https://maestro.dev"
+      />
+      <Logo
+        {...{
+          //  @ts-expect-error -- Cloudflare types conflict with Astro types
+          src: playwright.src,
+        }}
+        alt="Playwright"
+        href="https://playwright.dev"
+      />
+      <Logo
+        {...{
+          //  @ts-expect-error -- Cloudflare types conflict with Astro types
+          src: selenium.src,
+        }}
+        alt="Selenium"
+        href="https://www.selenium.dev"
+      />
+    </div>
+  </div>
+</div>
